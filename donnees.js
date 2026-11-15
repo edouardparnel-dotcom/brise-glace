@@ -57,7 +57,7 @@ Total TTC : 3 840,00 €
 
 // La boîte de réception de l'assistant(e) administratif(ve), mardi 17 novembre, 9 h.
 export const COURRIELS = [
-  { id: 'leroy', de: 'Sandrine Leroy', adresse: 's.leroy@batifer-exemple.fr', objet: 'Pour ce matin', heure: '8 h 41', taches: [1, 2, 3],
+  { id: 'leroy', de: 'Sandrine Leroy', adresse: 's.leroy@batifer-exemple.fr', objet: 'Pour ce matin', heure: '8 h 41', taches: [1, 2],
     corps: `Bonjour !
 
 Je suis en rendez-vous chantier toute la matinée. Deux choses à faire en priorité :
@@ -65,7 +65,6 @@ Je suis en rendez-vous chantier toute la matinée. Deux choses à faire en prior
 2. Envoyer la relance à Imméka : Lucas, notre stagiaire, l'a préparée avec l'IA, elle est prête.
 
 Je signe le tout à 11 h : envoyez-moi vos textes depuis cette messagerie.
-S'il vous reste du temps : le compte rendu de la réunion de lundi (mes notes sont dans un autre courriel).
 
 Merci !
 Sandrine Leroy
@@ -78,10 +77,7 @@ J'ai préparé la relance pour Imméka avec l'IA, elle est prête à partir. Je 
 
 Lucas`,
     pieces: [{ id: 'facture', nom: 'Facture F-2026-0392.pdf', html: FACTURE_HTML, texte: FACTURE_TEXTE }, { id: 'relance', nom: 'Lettre de relance.docx', texte: RELANCE }] },
-  { id: 'notes', de: 'Sandrine Leroy', adresse: 's.leroy@batifer-exemple.fr', objet: 'Mes notes de la réunion de lundi', heure: 'lundi 10 h 05', taches: [3],
-    corps: `Voici mes notes en vrac. Si vous avez le temps, un compte rendu propre : les décisions, qui fait quoi, pour quand.
-
-${NOTES}` },
+  // les notes de réunion (ancienne tâche 3) ne sont plus dans la boîte : séance d'une heure (15/11)
 ];
 
 // Séance d'une heure (Parnel 15/11) : deux tâches, plus de bonus ; le quiz garde 6 questions.

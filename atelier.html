@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-/* Atelier en binôme : chaque stagiaire sur son poste ; celui qui tape (le pilote) et celui qui remplit la fiche de tri
+/* Atelier (séance du 17/11 : chacun seul, sans binôme ; le mode binôme reste dans le code) : chaque stagiaire sur son poste ; celui qui tape (le pilote) et celui qui remplit la fiche de tri
    voient l'avancée de l'autre en direct, et les rôles s'inversent à chaque tâche. */
 .etapes{display:flex;gap:6px;flex-wrap:wrap}
 .etapes span{border-radius:999px;padding:4px 12px;font-size:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25)}
@@ -123,11 +123,10 @@
   <div class="haut" style="border-radius:16px"><div class="logo">B</div><div class="titre"><small>Atelier · mise en situation</small><b>Batifer, mardi 17 novembre, 9 h</b></div></div>
   <div class="carte">
     <h1>Bonjour !</h1>
-    <p>Vous travaillez en binôme, chacun sur son poste. Vous verrez sur votre écran ce que fait votre binôme, et quand c'est votre tour.</p>
+    <p>Vous travaillez seul(e), sur votre poste. Deux courriels vous attendent dans la boîte de Batifer.</p>
     <form id="f-entree" autocomplete="off" style="display:grid;gap:14px">
       <label class="champ" for="moi">Votre prénom<input type="text" id="moi" list="prenoms" maxlength="40" required></label>
-      <label class="champ" for="lui">Le prénom de votre binôme<span id="aide-binome">Celui ou celle avec qui vous travaillez aujourd'hui.</span><input type="text" id="lui" list="prenoms" maxlength="40"></label>
-      <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="seul"> Je travaille seul(e) aujourd'hui</label>
+      <input type="hidden" id="lui"><input type="checkbox" id="seul" checked hidden>
       <datalist id="prenoms"></datalist>
       <p class="erreur" id="e-entree" role="alert"></p>
       <button class="btn" type="submit">Entrer chez Batifer</button>
@@ -146,7 +145,7 @@
     <div class="logo">B</div>
     <div class="titre"><small>Atelier Batifer</small><b id="t-binome"></b></div>
     <div class="etapes" id="etapes"></div>
-    <nav><a href="ressources.html" target="_blank" rel="noopener">Ressources</a><button type="button" id="b-quitter">Changer de binôme</button></nav>
+    <nav><a href="ressources.html" target="_blank" rel="noopener">Ressources</a><button type="button" id="b-quitter">Changer de prénom</button></nav>
   </header>
   <div class="role" id="role"><div class="qui" id="r-qui"></div><div class="consigne" id="r-consigne"></div></div>
   <div class="suivi" id="suivi" aria-live="polite"></div>
@@ -157,10 +156,10 @@
 <!-- 3. Fini -->
 <main class="etroit cache" id="v-fini">
   <div class="carte" style="text-align:center;display:grid;gap:12px">
-    <h1>Bravo, votre binôme a terminé !</h1>
-    <p>Mme Leroy a vos textes. Avant le retour collectif, chacun répond seul au quiz : il vérifie ce que <b>vous</b> avez retenu.</p>
+    <h1>Bravo, vous avez terminé !</h1>
+    <p>Mme Leroy a vos textes. Nous allons les regarder ensemble ; le quiz viendra juste après.</p>
     <a class="btn" id="l-quiz" href="quiz.html">Faire mon quiz individuel</a>
-    <button class="mini" type="button" id="b-revoir" style="justify-self:center">Revoir nos tâches</button>
+    <button class="mini" type="button" id="b-revoir" style="justify-self:center">Revoir mes tâches</button>
   </div>
 </main>
 
@@ -191,11 +190,7 @@ const ecrire = {};   // écritures retardées (brouillon, fiche)
   const binomes = conf?.data()?.binomes || [];
   binomes.forEach(b => [b.a, b.b].forEach(p => p && noms.add(p)));
   $('prenoms').innerHTML = [...noms].sort().map(p => `<option value="${esc(p)}">`).join('');
-  $('moi').addEventListener('change', () => {
-    const m = $('moi').value.trim().toLowerCase(), b = binomes.find(x => [x.a, x.b].some(p => p?.toLowerCase() === m));
-    if (b) { $('lui').value = b.a.toLowerCase() === m ? b.b : b.a; $('aide-binome').textContent = 'Proposé par votre formateur.'; }
-  });
-  $('seul').addEventListener('change', e => { $('lui').disabled = e.target.checked; });
+
 })();
 
 $('f-entree').addEventListener('submit', async ev => {
@@ -226,7 +221,7 @@ async function creer(a, b, premier) {
 }
 
 $('b-quitter').addEventListener('click', () => {
-  if (!confirm('Quitter ce binôme sur ce poste ? Le travail déjà fait est gardé.')) return;
+  if (!confirm('Changer de prénom sur ce poste ? Le travail déjà fait est gardé.')) return;
   memo('atelier', {}); location.reload();
 });
 
@@ -270,7 +265,7 @@ function afficher() {
   $('suivi').innerHTML = `<span class="${demandes ? 'ok' : ''}">${demandes ? '✓' : '1.'} Demande à l'IA${demandes ? ` (${demandes})` : ''}</span>`
     + `<span class="${(T.brouillon || '').trim() ? 'ok' : ''}">${(T.brouillon || '').trim() ? '✓' : '2.'} Texte préparé</span>`
     + `<span class="${T.envoi ? 'ok' : ''}">${T.envoi ? '✓' : '3.'} Envoyé à Mme Leroy</span>`
-    + `<span class="${T.ficheFinie ? 'ok' : ''}">${T.ficheFinie ? '✓' : '4.'} Fiche de tri${seul() ? '' : ` (${esc(pilote(vueTache) === AT.a ? AT.b : AT.a)})`}</span>`
+    + `<span class="${T.ficheFinie ? 'ok' : ''}">${T.ficheFinie ? '✓' : '4.'} Fiche de tri${seul() ? ' (si vous voulez)' : ` (${esc(pilote(vueTache) === AT.a ? AT.b : AT.a)})`}</span>`
     + (attente && !jeTape() ? '' : '') + (ms.length && ms.at(-1).role === 'user' && !jeTape() ? `<span class="ecrit">${esc(p)} attend la réponse de l'IA…</span>` : '');
   finDeTache(lecture);
   dessinerZone(lecture);
@@ -279,11 +274,11 @@ function afficher() {
 function finDeTache(lecture) {
   const el = $('fin-tache');
   if (lecture) { el.innerHTML = `<div class="bravo"><b>Tâche ${vueTache} terminée. Vous la relisez.</b><button class="btn bleu" type="button" data-aller="${AT.tache}">${AT.tache > 3 ? 'Retour' : 'Revenir à la tâche en cours'}</button></div>`; return lier(el); }
-  if (!(T.envoi && T.ficheFinie)) { el.innerHTML = ''; return; }
+  if (!T.envoi) { el.innerHTML = ''; return; }
   const suite = vueTache === 1 ? `<button class="btn vert" type="button" data-suivante="2">Passer à la tâche 2${seul() ? '' : ' : les rôles s\'inversent'}</button>`
     : vueTache === 2 ? `<button class="btn vert" type="button" data-suivante="4">Terminer l'atelier</button>`
     : `<button class="btn vert" type="button" data-suivante="4">Terminer l'atelier</button>`;
-  el.innerHTML = `<div class="bravo"><b>Tâche ${vueTache} faite : texte envoyé et fiche de tri remplie.</b>${suite}</div>`;
+  el.innerHTML = `<div class="bravo"><b>Tâche ${vueTache} faite : texte envoyé à Mme Leroy.</b>${suite}</div>`;
   lier(el);
 }
 

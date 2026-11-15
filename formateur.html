@@ -105,7 +105,7 @@ onSnapshot(collection(db, 'murs', SALLE, 'ateliers'), s => {
 onSnapshot(query(collection(db, 'murs', SALLE, 'quiz'), orderBy('le')), s => { quiz = s.docs.map(d => d.data()); rendre(); });
 onSnapshot(query(collection(db, 'murs', SALLE, 'avis'), orderBy('le')), s => { avis = s.docs.map(d => d.data()); rendre(); });
 
-const ONGLETS = [['seance', 'Ma séance', null], ['stagiaires', 'Stagiaires et binômes', () => entrees.length], ['ateliers', 'Ateliers en direct', () => Object.keys(ateliers).length],
+const ONGLETS = [['seance', 'Ma séance', null], ['stagiaires', 'Stagiaires', () => entrees.length], ['ateliers', 'Ateliers en direct', () => Object.keys(ateliers).length],
   ['projeter', 'Projeter', null], ['quiz', 'Quiz', () => quiz.length], ['avis', 'Avis', () => avis.length], ['documents', 'Documents et liens', null]];
 
 function rendre() {
@@ -124,10 +124,10 @@ function rendre() {
 // ——— ma séance : le conducteur (horaires, ce qu'on projette à chaque moment), sans clé USB ———
 const PHASES = [   // séance d'une heure (Parnel 15/11) : la présentation et un peu de pédagogie, sans surcharger
   [0, 5, 'Accueil et brise-glace', "Présente-toi en 1 minute, annonce l'objectif. Le mur au vidéoprojecteur : chacun scanne le QR code, choisit une image et un mot.",
-    [['index.html#ecran', 'Mur et QR code'], ['diapos.html#1', 'Diapositive de titre'], ['@stagiaires', 'Stagiaires et binômes']]],
+    [['index.html#ecran', 'Mur et QR code'], ['diapos.html#1', 'Diapositive de titre'], ['@stagiaires', 'Stagiaires']]],
   [5, 17, 'Apport démonstratif', "Diapositives 2 à 5 et trois démonstrations seulement : le courriel trop sec, Batifer inconnue (l'IA invente), la demande vague puis en 4 éléments.",
     [['diapos.html#2', 'Diapositives'], ['demo.html', 'Démonstration'], ['https://chat.mistral.ai', 'Le Chat (secours)']]],
-  [17, 40, 'Mise en situation Batifer', "Diapositive 6, puis l'adresse de l'atelier en grand. Chacun tape son prénom et celui de son binôme. Deux tâches : M. Durand, puis la relance (les rôles s'inversent). Passe d'abord voir les alertes rouges.",
+  [17, 40, 'Mise en situation Batifer', "Diapositive 6, puis l'adresse de l'atelier en grand. Chacun seul, sur son poste : il tape son prénom. Deux tâches : M. Durand, puis la relance. Tu passes aux postes. Passe d'abord voir les alertes rouges.",
     [['diapos.html#6', 'Diapositive « À vous »'], ['!atelier.html', 'Adresse de l\'atelier en grand'], ['@ateliers', 'Ateliers en direct']]],
   [40, 50, 'Retour et analyse', "Projette 2 textes anonymes : une bonne pratique, une erreur utile. Tu joues Mme Leroy : « Qu'avez-vous mis dans l'IA ? Corrigé ? Comment l'avez-vous vérifié ? »",
     [['@projeter', 'Projeter les textes envoyés']]],
@@ -179,10 +179,10 @@ function stagiaires() {
     <div class="tableau"><table><thead><tr><th>Image</th><th>Prénom et nom</th><th>Parcours</th><th>Mot</th><th>IA</th></tr></thead><tbody>
     ${entrees.map(f => `<tr><td><img src="images/${f.image}-${IMAGES[f.image]}.jpg" alt=""></td><td><b>${esc(f.prenom)} ${esc(f.nom)}</b></td><td>${esc(f.parcours) || '—'}</td><td>${esc(f.mot)}</td><td>${f.ia ? `<span class="pastille p-${esc(f.ia)}">${esc(f.ia)}</span>` : '—'}</td></tr>`).join('') || '<tr><td colspan="5">Personne pour l\'instant.</td></tr>'}
     </tbody></table></div>
-    <section><h2>Les binômes</h2><p class="note">${valides.length ? '✓ Validés : chaque stagiaire retrouve son binôme en tapant son prénom dans l\'atelier.' : 'Proposés : un « jamais » avec un « souvent » ou un « parfois ». Ajustez, puis validez : l\'atelier les proposera à chacun.'}</p></section>
+    <div hidden><!-- séance sans binôme (15/11) --><section><h2>Les binômes</h2><p class="note">${valides.length ? '✓ Validés : chaque stagiaire retrouve son binôme en tapant son prénom dans l\'atelier.' : 'Proposés : un « jamais » avec un « souvent » ou un « parfois ». Ajustez, puis validez : l\'atelier les proposera à chacun.'}</p></section>
     <div class="binomes">${liste.map((b, i) => `<div class="carte"><b>Binôme ${i + 1}</b>${sel(b.a, `b-sel-${i}-a`)}${sel(b.b, `b-sel-${i}-b`)}</div>`).join('') || '<p class="note">Les binômes apparaîtront quand les stagiaires auront rempli leur fiche.</p>'}</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" type="button" id="b-valider" ${liste.length ? '' : 'disabled'}>${valides.length ? 'Enregistrer les changements' : 'Valider ces binômes'}</button>
-    ${valides.length ? '<button class="btn clair" type="button" id="b-reproposer">Reprendre les propositions</button>' : ''}<button class="mini" type="button" id="b-plus">+ Un binôme</button></div>`;
+    ${valides.length ? '<button class="btn clair" type="button" id="b-reproposer">Reprendre les propositions</button>' : ''}<button class="mini" type="button" id="b-plus">+ Un binôme</button></div></div>`;
 }
 
 // ——— ateliers en direct ———
@@ -194,8 +194,8 @@ function etatTache(id, n) {
 const pilote = (a, n) => a.b === 'Seul(e)' ? a.a : (n % 2 === 1 ? a.premier : (a.premier === a.a ? a.b : a.a));
 function vueAteliers() {
   const ids = Object.keys(ateliers).sort();
-  if (!ids.length) return `<h2>Ateliers en direct</h2><p class="note">Aucun binôme n'est encore entré dans l'atelier (${esc(BASE)}atelier.html${esc(suffixe)}).</p>`;
-  return `<h2>Ateliers en direct</h2><p class="note">Mise à jour en direct. Une alerte rouge : le binôme a envoyé des données personnelles à l'IA malgré l'avertissement. Passez d'abord voir ceux-là.</p>
+  if (!ids.length) return `<h2>Ateliers en direct</h2><p class="note">Personne n'est encore entré dans l'atelier (${esc(BASE)}atelier.html${esc(suffixe)}).</p>`;
+  return `<h2>Ateliers en direct</h2><p class="note">Mise à jour en direct. Une alerte rouge : le stagiaire a envoyé des données personnelles à l'IA malgré l'avertissement. Passez d'abord voir ceux-là.</p>
   <div class="ateliers">${ids.map(id => {
     const a = ateliers[id], cours = Math.min(a.tache, 3);
     const alertes = TACHES_SEANCE.flatMap(n => etatTache(id, n).envoyees);
@@ -230,7 +230,7 @@ function projeter() {
   return `<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center"><h2>Les textes envoyés à Mme Leroy</h2>
     <div class="choix-t">${TACHES_SEANCE.map(n => `<button class="${n === projoTache ? 'btn' : 'btn clair'}" type="button" data-projo="${n}">Tâche ${n}</button>`).join('')}<button class="btn bleu" type="button" id="b-plein">Plein écran</button></div></div>
     <p class="note">${esc(TACHES[projoTache].titre)}. Pour le retour : « Montrez-moi avant que je signe. Qu'avez-vous mis dans l'IA ? Qu'avez-vous corrigé ? Comment l'avez-vous vérifié ? »</p>
-    <div class="projo">${ids.map((id, i) => `<div class="carte"><h3>Binôme ${String.fromCharCode(65 + i)}</h3><div class="texte">${esc(taches[id][projoTache].envoi.texte)}</div></div>`).join('') || '<p class="note">Aucun texte envoyé pour cette tâche.</p>'}</div>`;
+    <div class="projo">${ids.map((id, i) => `<div class="carte"><h3>Texte ${String.fromCharCode(65 + i)}</h3><div class="texte">${esc(taches[id][projoTache].envoi.texte)}</div></div>`).join('') || '<p class="note">Aucun texte envoyé pour cette tâche.</p>'}</div>`;
 }
 
 // ——— quiz ———
