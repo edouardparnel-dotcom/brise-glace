@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Démonstration</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* Démonstration de l'apport, au vidéoprojecteur : l'assistant en gros caractères, les phrases de la démonstration à un clic. */
+body{font-size:var(--taille,22px)}
+.page{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;padding:16px max(16px,2vw);align-items:start}
+.fil{display:grid;gap:14px;min-height:50vh}
+.bulle{border-radius:16px;padding:14px 18px;white-space:pre-wrap;line-height:1.45}
+.bulle.user{background:var(--plan);color:#fff;margin-left:10%}
+.bulle.assistant{background:var(--carte);border:1px solid var(--trait);margin-right:4%}
+.vide{color:var(--doux);border:2px dashed var(--trait);border-radius:16px;padding:30px;text-align:center}
+.saisie{display:grid;gap:10px;margin-top:16px;position:sticky;bottom:0;background:var(--papier);padding:10px 0}
+.saisie textarea{font-size:inherit;min-height:3.4em}
+.saisie .ligne{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.saisie .btn{margin-left:auto;font-size:20px}
+aside{display:grid;gap:10px;font-size:16px;position:sticky;top:12px}
+aside h2{font-size:18px;color:var(--plan)}
+aside button.raccourci{text-align:left;border:1px solid var(--trait);background:var(--carte);border-radius:12px;padding:8px 12px;cursor:pointer;line-height:1.35}
+aside button.raccourci:hover{border-color:var(--plan-2)}
+aside button.raccourci small{display:block;color:var(--doux);font-size:13px}
+.ecrit{color:var(--doux);font-style:italic}
+.secours{background:var(--orange-clair);border-radius:12px;padding:12px 14px;font-size:16px}
+@media (max-width:900px){.page{grid-template-columns:1fr}aside{position:static}}
+</style>
+</head>
+<body>
+<header class="haut"><div class="logo">B</div><div class="titre"><small>Apport démonstratif · en direct</small><b>L'assistant IA</b></div>
+  <nav><button type="button" id="b-moins" aria-label="Texte plus petit">A−</button><button type="button" id="b-plus" aria-label="Texte plus grand">A+</button><button type="button" id="b-plein">Plein écran</button><button type="button" id="b-nouveau">Nouvelle conversation</button></nav></header>
+<main class="page">
+  <section>
+    <div class="fil" id="fil"><p class="vide">Choisissez une phrase à droite, ou écrivez une demande.</p></div>
+    <div class="saisie"><textarea id="demande" aria-label="Demande à l'IA" placeholder="Votre demande à l'IA"></textarea>
+      <div class="ligne"><span style="color:var(--doux);font-size:15px">Ctrl + Entrée pour envoyer</span><button class="btn" type="button" id="b-envoyer">Envoyer à l'IA</button></div></div>
+  </section>
+  <aside>
+    <h2>Ce qu'elle fait bien</h2>
+    <button class="raccourci" type="button" data-texte="Rends ce message plus poli :&#10;&#10;Votre dossier est incomplet. Il manque l'attestation. Sans elle, rien ne sera traité. Renvoyez-la.">Le courriel trop sec<small>« Rends ce message plus poli »</small></button>
+    <button class="raccourci" type="button" data-texte="Résume ce texte en 3 lignes.">Résumer<small>« Résume ce texte en 3 lignes »</small></button>
+    <h2>Ce qu'elle ne sait pas</h2>
+    <button class="raccourci" type="button" data-texte="Quel est le tarif horaire de l'entreprise Batifer ?">Une entreprise qu'elle ne connaît pas<small>« Quel est le tarif horaire de Batifer ? »</small></button>
+    <button class="raccourci" type="button" data-texte="Combien de jours pour payer une facture entre entreprises ?">Une règle à vérifier<small>« Combien de jours pour payer une facture entre entreprises ? »</small></button>
+    <a class="raccourci mini" style="justify-self:start" href="https://entreprendre.service-public.fr" target="_blank" rel="noopener">Vérifier sur service-public.fr</a>
+    <h2>Bien lui demander</h2>
+    <button class="raccourci" type="button" data-texte="Écris un mail pour une facture.">La demande vague<small>« Écris un mail pour une facture »</small></button>
+    <button class="raccourci" type="button" data-texte="Tu es assistant administratif dans une PME. Rédige une réponse à un client mécontent. Il a reçu la même facture deux fois ; le doublon sera annulé sous 5 jours ouvrés. Ton courtois, vouvoiement, 8 lignes maximum, avec un objet.">La demande en 4 éléments<small>Celle que le groupe dicte</small></button>
+    <button class="raccourci" type="button" data-texte="Plus court.">« Plus court »</button>
+    <button class="raccourci" type="button" data-texte="Ajoute un objet.">« Ajoute un objet »</button>
+    <p class="secours cache" id="secours">L'assistant ne répond pas. Ouvrez <a href="https://chat.mistral.ai" target="_blank" rel="noopener">Le Chat</a> et collez-y la même phrase : chaque bouton la met aussi dans le presse-papiers.</p>
+  </aside>
+</main>
+<script type="module">
+import { assistant, SALLE, $, esc, copier, toast } from './commun.js';
+
+let messages = [], attente = false, taille = 22;
+try { taille = +localStorage.getItem('demo-taille') || 22; } catch {}
+const appliquer = () => { document.body.style.setProperty('--taille', taille + 'px'); try { localStorage.setItem('demo-taille', taille); } catch {} };
+appliquer();
+$('b-moins').onclick = () => { taille = Math.max(16, taille - 2); appliquer(); };
+$('b-plus').onclick = () => { taille = Math.min(40, taille + 2); appliquer(); };
+$('b-plein').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.().catch(() => {});
+$('b-nouveau').onclick = () => { messages = []; dessiner(); $('demande').focus(); };
+
+function dessiner() {
+  $('fil').innerHTML = messages.length ? messages.map(m => `<div class="bulle ${m.role}">${esc(m.content)}</div>`).join('') + (attente ? '<p class="ecrit">L\'assistant écrit…</p>' : '')
+    : '<p class="vide">Choisissez une phrase à droite, ou écrivez une demande.</p>';
+  $('b-envoyer').disabled = attente;
+  scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+document.querySelectorAll('[data-texte]').forEach(b => b.onclick = () => {
+  $('demande').value = b.dataset.texte; copier(b.dataset.texte); $('demande').focus();
+});
+$('demande').onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); envoyer(); } };
+$('b-envoyer').onclick = envoyer;
+
+async function envoyer() {
+  const texte = $('demande').value.trim();
+  if (!texte || attente) return;
+  messages.push({ role: 'user', content: texte }); $('demande').value = ''; attente = true; dessiner();
+  try {
+    const r = await assistant({ salle: SALLE, binome: 'demo-formateur', messages: messages.slice(-16) });
+    messages.push({ role: 'assistant', content: r.data.reponse || '(réponse vide)' });
+  } catch (e) {
+    console.error(e); messages.pop(); $('demande').value = texte;
+    $('secours').classList.remove('cache'); toast('L\'assistant ne répond pas : utilisez Le Chat.');
+  }
+  attente = false; dessiner();
+}
+</script>
+</body>
+</html>

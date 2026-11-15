@@ -52,6 +52,20 @@ details summary{cursor:pointer;color:var(--plan-2);font-weight:700}
 .liens{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .liens a{display:grid;gap:2px;background:var(--carte);border:1px solid var(--trait);border-radius:12px;padding:12px 14px;text-decoration:none;color:inherit}
 .liens a b{color:var(--plan-2)}.liens a span{color:var(--doux);font-size:14px}
+.chrono{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--plan);color:#fff;border-radius:16px;padding:14px 18px}
+.chrono b{font-family:var(--f-titre);font-size:40px;line-height:1;min-width:120px}
+.chrono span{opacity:.85;flex:1 1 200px}
+.chrono .btn.clair{background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
+.phases{display:grid;gap:10px}
+.phase{display:grid;grid-template-columns:110px 1fr;gap:4px 16px;background:var(--carte);border:1px solid var(--trait);border-radius:14px;padding:12px 16px}
+.phase.ici{border:3px solid var(--chantier);box-shadow:0 6px 20px rgba(232,105,44,.15)}
+.phase.passee{opacity:.6}
+.phase .h{font-family:var(--f-titre);font-weight:700;color:var(--plan)}
+.phase h3{font-size:19px}
+.phase p{margin:2px 0 6px;color:var(--doux);font-size:15px}
+.phase .actions{grid-column:2;display:flex;gap:8px;flex-wrap:wrap}
+.phase .actions a,.phase .actions button{font-size:15px}
+@media (max-width:600px){.phase{grid-template-columns:1fr}.phase .actions{grid-column:1}}
 .grand{position:fixed;inset:0;background:var(--plan);color:#fff;z-index:40;display:grid;place-items:center;text-align:center;padding:24px;cursor:pointer}
 .grand b{font-family:var(--f-titre);font-size:clamp(28px,5.5vw,76px);word-break:break-all;line-height:1.1}
 .grand span{display:block;margin-top:18px;font-size:22px;opacity:.8}
@@ -73,7 +87,7 @@ const BASE = location.origin + location.pathname.replace(/formateur\.html$/, '')
 const DOC_SEANCE = 'https://claude.ai/artifact/4HmhfTF1uaapV4wXq9YtvC';
 $('salle').textContent = SALLE; $('l-ecran').href = 'index.html' + suffixe + '#ecran';
 
-let ONGLET = (() => { try { return sessionStorage.getItem('onglet') || 'stagiaires'; } catch { return 'stagiaires'; } })();
+let ONGLET = (() => { try { return sessionStorage.getItem('onglet') || 'seance'; } catch { return 'seance'; } })();
 let entrees = [], conf = {}, ateliers = {}, taches = {}, quiz = [], avis = [], projoTache = 2;
 const ecoutes = {};
 
@@ -91,7 +105,7 @@ onSnapshot(collection(db, 'murs', SALLE, 'ateliers'), s => {
 onSnapshot(query(collection(db, 'murs', SALLE, 'quiz'), orderBy('le')), s => { quiz = s.docs.map(d => d.data()); rendre(); });
 onSnapshot(query(collection(db, 'murs', SALLE, 'avis'), orderBy('le')), s => { avis = s.docs.map(d => d.data()); rendre(); });
 
-const ONGLETS = [['stagiaires', 'Stagiaires et binômes', () => entrees.length], ['ateliers', 'Ateliers en direct', () => Object.keys(ateliers).length],
+const ONGLETS = [['seance', 'Ma séance', null], ['stagiaires', 'Stagiaires et binômes', () => entrees.length], ['ateliers', 'Ateliers en direct', () => Object.keys(ateliers).length],
   ['projeter', 'Projeter', null], ['quiz', 'Quiz', () => quiz.length], ['avis', 'Avis', () => avis.length], ['documents', 'Documents et liens', null]];
 
 function rendre() {
@@ -101,11 +115,55 @@ function rendre() {
   const y = scrollY;
   const actif = document.activeElement?.id;
   if (actif?.startsWith('b-sel')) return;   // ne pas redessiner pendant un choix de binôme
-  $('vue').innerHTML = ({ stagiaires, ateliers: vueAteliers, projeter, quiz: vueQuiz, avis: vueAvis, documents })[ONGLET]();
+  $('vue').innerHTML = ({ seance, stagiaires, ateliers: vueAteliers, projeter, quiz: vueQuiz, avis: vueAvis, documents })[ONGLET]();
   document.querySelectorAll('details').forEach(d => { if (ouverts.includes(d.dataset.k)) d.open = true; });
   scrollTo(0, y);
   brancher();
 }
+
+// ——— ma séance : le conducteur (horaires, ce qu'on projette à chaque moment), sans clé USB ———
+const PHASES = [
+  [0, 10, 'Accueil et brise-glace', "Présente-toi en 1 minute, annonce l'objectif. Le mur au vidéoprojecteur : chacun scanne le QR code. Valide les binômes dans l'onglet Stagiaires.",
+    [['index.html#ecran', 'Mur et QR code'], ['diapos.html#1', 'Diapositive de titre'], ['@stagiaires', 'Stagiaires et binômes']]],
+  [10, 30, 'Apport démonstratif', "Diapositives 2 à 5, et la démonstration en direct : le courriel trop sec, Batifer inconnue, la règle à vérifier, la demande vague puis en 4 éléments.",
+    [['diapos.html#2', 'Diapositives'], ['demo.html', 'Démonstration'], ['https://chat.mistral.ai', 'Le Chat (secours)']]],
+  [30, 60, 'Mise en situation Batifer', "Diapositive 6, puis l'adresse de l'atelier en grand. Chacun tape son prénom et celui de son binôme. Tâches 1 et 2, la 3 en bonus. Passe d'abord voir les alertes rouges.",
+    [['diapos.html#6', 'Diapositive « À vous »'], ['!atelier.html', 'Adresse de l\'atelier en grand'], ['@ateliers', 'Ateliers en direct']]],
+  [60, 65, 'Pause', "5 minutes. Choisis 2 exemples anonymes dans « Projeter » : une bonne pratique et une erreur utile.", [['@projeter', 'Préparer le retour']]],
+  [65, 77, 'Retour et analyse', "Tu joues Mme Leroy : « Montrez-moi la relance avant que je signe. » Fais trouver les 3 erreurs. « Qu'avez-vous mis dans l'IA ? Corrigé ? Comment l'avez-vous vérifié ? »",
+    [['@projeter', 'Projeter les textes envoyés']]],
+  [77, 90, 'Bilan individuel', "Diapositive 7 et l'adresse du quiz. Chacun seul : le quiz, sa phrase, son avis. Termine sur les mots du brise-glace : « Qui changerait son mot ? »",
+    [['diapos.html#7', 'Diapositive du bilan'], ['!quiz.html', 'Adresse du quiz en grand'], ['@quiz', 'Résultats du quiz'], ['index.html#ecran', 'Le mur et ses mots']]],
+];
+const cleDebut = 'debut-seance-' + SALLE;
+const debut = () => { try { return +localStorage.getItem(cleDebut) || 0; } catch { return 0; } };
+const minutes = () => debut() ? (Date.now() - debut()) / 60000 : -1;
+function seance() {
+  const m = minutes();
+  const lien = ([href, t]) => href.startsWith('@') ? `<button class="mini" type="button" data-o="${href.slice(1)}">${t}</button>`
+    : href.startsWith('!') ? `<button class="mini" type="button" data-grand="${href.slice(1)}">${t}</button>`
+    : `<a class="mini" href="${esc(href.startsWith('http') ? href : href.replace(/^([^#]*)/, `$1${suffixe}`))}" target="_blank" rel="noopener">${t}</a>`;
+  return `<div class="chrono"><b id="chrono">${m < 0 ? '0:00' : horloge(m)}</b><span id="chrono-txt">${m < 0 ? 'Lancez le chronomètre au début de la séance : la phase en cours s\'affiche en orange.' : phaseTexte(m)}</span>
+      ${m < 0 ? '<button class="btn" type="button" id="b-debut">Démarrer la séance</button>' : '<button class="btn clair" type="button" id="b-zero">Remettre à zéro</button>'}</div>
+    <p class="note">Tout s'ouvre dans le navigateur du poste du centre : pas besoin de clé USB. Le corrigé est dans <a href="${DOC_SEANCE}" target="_blank" rel="noopener">le déroulé complet</a>, sur votre téléphone.</p>
+    <div class="phases">${PHASES.map(([a, b, titre, texte, liens], k) => `<div class="phase ${m >= a && m < b ? 'ici' : m >= b ? 'passee' : ''}" data-phase="${k}">
+      <span class="h">${hm(a)} – ${hm(b)}</span><div><h3>${esc(titre)}</h3><p>${esc(texte)}</p></div>
+      <div class="actions">${liens.map(lien).join('')}</div></div>`).join('')}</div>`;
+}
+const hm = m => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;   // horaires du déroulé : 0:10, 1:05
+function horloge(m) { const t = Math.max(0, Math.floor(m * 60)); return `${Math.floor(t / 3600) ? Math.floor(t / 3600) + ':' : ''}${String(Math.floor(t / 60) % 60).padStart(Math.floor(t / 3600) ? 2 : 1, '0')}:${String(t % 60).padStart(2, '0')}`; }
+function phaseTexte(m) {
+  const k = PHASES.findIndex(([a, b]) => m >= a && m < b);
+  if (k < 0) return m >= 90 ? 'Séance terminée : 1 h 30.' : '';
+  const [, b, titre] = PHASES[k], reste = b - m;
+  return `${titre} · encore ${Math.ceil(reste)} min`;
+}
+setInterval(() => {   // seulement le chronomètre et la phase en cours, sans tout redessiner
+  if (ONGLET !== 'seance' || !debut()) return;
+  const m = minutes(); if (!$('chrono')) return;
+  $('chrono').textContent = horloge(m); $('chrono-txt').textContent = phaseTexte(m);
+  document.querySelectorAll('[data-phase]').forEach(el => { const [a, b] = PHASES[+el.dataset.phase]; el.classList.toggle('ici', m >= a && m < b); el.classList.toggle('passee', m >= b); });
+}, 1000);
 
 // ——— stagiaires et binômes ———
 function propositions() {
@@ -212,7 +270,9 @@ function documents() {
     ${l('index.html' + suffixe + '#ecran', 'Mur projeté', 'Au vidéoprojecteur, pour le brise-glace (QR code)', 1)}
     ${l('atelier.html' + suffixe, 'Atelier Batifer', 'Sur chaque poste, après l\'apport', 1)}
     ${l('quiz.html' + suffixe, 'Quiz individuel', 'À la fin, chacun seul', 1)}
-    ${l('ressources.html' + suffixe, 'Ressources', 'Les PDF pour les stagiaires', 1)}</div>
+    ${l('ressources.html' + suffixe, 'Ressources', 'Les PDF pour les stagiaires', 1)}
+    ${l('diapos.html' + suffixe, 'Diapositives', 'Dans le navigateur : flèches, F plein écran, N notes', 1)}
+    ${l('demo.html' + suffixe, 'Démonstration', 'L\'assistant IA en grand, phrases prêtes', 1)}</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" type="button" data-grand="atelier.html">Projeter l'adresse de l'atelier</button><button class="btn clair" type="button" data-grand="quiz.html">Projeter l'adresse du quiz</button></div>
     <h2>Pour vous</h2><div class="liens">
     ${l(DOC_SEANCE, 'Le déroulé complet', 'Le document « Séance IA », avec le corrigé et les adaptations', 1)}
@@ -227,6 +287,9 @@ function documents() {
 function brancher() {
   const v = $('vue');
   v.querySelectorAll('[data-projo]').forEach(b => b.onclick = () => { projoTache = +b.dataset.projo; rendre(); });
+  v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { ONGLET = b.dataset.o; try { sessionStorage.setItem('onglet', ONGLET); } catch {} rendre(); scrollTo(0, 0); });
+  $('b-debut')?.addEventListener('click', () => { try { localStorage.setItem(cleDebut, Date.now()); } catch {} rendre(); });
+  $('b-zero')?.addEventListener('click', () => { if (!confirm('Remettre le chronomètre à zéro ?')) return; try { localStorage.removeItem(cleDebut); } catch {} rendre(); });
   $('b-plein')?.addEventListener('click', () => document.documentElement.requestFullscreen?.().catch(() => {}));
   v.querySelectorAll('[data-grand]').forEach(b => b.onclick = () => {
     const g = document.createElement('div'); g.className = 'grand';
