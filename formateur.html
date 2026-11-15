@@ -79,7 +79,7 @@ details summary{cursor:pointer;color:var(--plan-2);font-weight:700}
 
 <script type="module">
 import { db, SALLE, suffixe, $, esc } from './commun.js';
-import { TACHES, QUESTIONS } from './donnees.js';
+import { TACHES, TACHES_SEANCE, QUESTIONS } from './donnees.js';
 import { collection, doc, onSnapshot, setDoc, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const IMAGES = ['soleil', 'cafe', 'sommet', 'bouchon', 'fusee', 'hamac', 'dossiers', 'foret', 'graine', 'orage', 'arcenciel', 'bateau'];
@@ -122,17 +122,16 @@ function rendre() {
 }
 
 // ——— ma séance : le conducteur (horaires, ce qu'on projette à chaque moment), sans clé USB ———
-const PHASES = [
-  [0, 10, 'Accueil et brise-glace', "Présente-toi en 1 minute, annonce l'objectif. Le mur au vidéoprojecteur : chacun scanne le QR code. Valide les binômes dans l'onglet Stagiaires.",
+const PHASES = [   // séance d'une heure (Parnel 15/11) : la présentation et un peu de pédagogie, sans surcharger
+  [0, 5, 'Accueil et brise-glace', "Présente-toi en 1 minute, annonce l'objectif. Le mur au vidéoprojecteur : chacun scanne le QR code, choisit une image et un mot.",
     [['index.html#ecran', 'Mur et QR code'], ['diapos.html#1', 'Diapositive de titre'], ['@stagiaires', 'Stagiaires et binômes']]],
-  [10, 30, 'Apport démonstratif', "Diapositives 2 à 5, et la démonstration en direct : le courriel trop sec, Batifer inconnue, la règle à vérifier, la demande vague puis en 4 éléments.",
+  [5, 17, 'Apport démonstratif', "Diapositives 2 à 5 et trois démonstrations seulement : le courriel trop sec, Batifer inconnue (l'IA invente), la demande vague puis en 4 éléments.",
     [['diapos.html#2', 'Diapositives'], ['demo.html', 'Démonstration'], ['https://chat.mistral.ai', 'Le Chat (secours)']]],
-  [30, 60, 'Mise en situation Batifer', "Diapositive 6, puis l'adresse de l'atelier en grand. Chacun tape son prénom et celui de son binôme. Tâches 1 et 2, la 3 en bonus. Passe d'abord voir les alertes rouges.",
+  [17, 40, 'Mise en situation Batifer', "Diapositive 6, puis l'adresse de l'atelier en grand. Chacun tape son prénom et celui de son binôme. Deux tâches : M. Durand, puis la relance (les rôles s'inversent). Passe d'abord voir les alertes rouges.",
     [['diapos.html#6', 'Diapositive « À vous »'], ['!atelier.html', 'Adresse de l\'atelier en grand'], ['@ateliers', 'Ateliers en direct']]],
-  [60, 65, 'Pause', "5 minutes. Choisis 2 exemples anonymes dans « Projeter » : une bonne pratique et une erreur utile.", [['@projeter', 'Préparer le retour']]],
-  [65, 77, 'Retour et analyse', "Tu joues Mme Leroy : « Montrez-moi la relance avant que je signe. » Fais trouver les 3 erreurs. « Qu'avez-vous mis dans l'IA ? Corrigé ? Comment l'avez-vous vérifié ? »",
+  [40, 50, 'Retour et analyse', "Projette 2 textes anonymes : une bonne pratique, une erreur utile. Tu joues Mme Leroy : « Qu'avez-vous mis dans l'IA ? Corrigé ? Comment l'avez-vous vérifié ? »",
     [['@projeter', 'Projeter les textes envoyés']]],
-  [77, 90, 'Bilan individuel', "Diapositive 7 et l'adresse du quiz. Chacun seul : le quiz, sa phrase, son avis. Termine sur les mots du brise-glace : « Qui changerait son mot ? »",
+  [50, 60, 'Bilan individuel', "Diapositive 7 et l'adresse du quiz : 6 questions, chacun seul, puis sa phrase et son avis. Termine sur les mots du brise-glace : « Qui changerait son mot ? »",
     [['diapos.html#7', 'Diapositive du bilan'], ['!quiz.html', 'Adresse du quiz en grand'], ['@quiz', 'Résultats du quiz'], ['index.html#ecran', 'Le mur et ses mots']]],
 ];
 const cleDebut = 'debut-seance-' + SALLE;
@@ -154,7 +153,7 @@ const hm = m => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;   //
 function horloge(m) { const t = Math.max(0, Math.floor(m * 60)); return `${Math.floor(t / 3600) ? Math.floor(t / 3600) + ':' : ''}${String(Math.floor(t / 60) % 60).padStart(Math.floor(t / 3600) ? 2 : 1, '0')}:${String(t % 60).padStart(2, '0')}`; }
 function phaseTexte(m) {
   const k = PHASES.findIndex(([a, b]) => m >= a && m < b);
-  if (k < 0) return m >= 90 ? 'Séance terminée : 1 h 30.' : '';
+  if (k < 0) return m >= 60 ? 'Séance terminée : 1 h.' : '';
   const [, b, titre] = PHASES[k], reste = b - m;
   return `${titre} · encore ${Math.ceil(reste)} min`;
 }
@@ -199,10 +198,10 @@ function vueAteliers() {
   return `<h2>Ateliers en direct</h2><p class="note">Mise à jour en direct. Une alerte rouge : le binôme a envoyé des données personnelles à l'IA malgré l'avertissement. Passez d'abord voir ceux-là.</p>
   <div class="ateliers">${ids.map(id => {
     const a = ateliers[id], cours = Math.min(a.tache, 3);
-    const alertes = [1, 2, 3].flatMap(n => etatTache(id, n).envoyees);
+    const alertes = TACHES_SEANCE.flatMap(n => etatTache(id, n).envoyees);
     return `<div class="carte atelier"><h3>${esc(a.b === 'Seul(e)' ? a.a + ' (seul)' : a.a + ' et ' + a.b)}<small>${a.tache > 3 ? '✓ Terminé' : `Tâche ${cours} · ${esc(pilote(a, cours))} tape`}</small></h3>
       ${alertes.length ? `<div class="alerte-carte">Données personnelles envoyées à l'IA : ${esc([...new Set(alertes.flatMap(x => x.quoi))].join(', '))}</div>` : ''}
-      ${[1, 2, 3].map(n => {
+      ${TACHES_SEANCE.map(n => {
         const { t, dem, evitees } = etatTache(id, n), lignes = t.fiche?.lignes?.length || 0;
         if (n > a.tache && !dem) return '';
         return `<div class="t-ligne"><b>${n}. ${esc(TACHES[n].court)}</b><div class="etats">
@@ -211,7 +210,7 @@ function vueAteliers() {
           <span class="pastille ${t.envoi ? 'p-ok' : 'p-neutre'}">${t.envoi ? '✓ envoyé' : 'pas envoyé'}</span>
           <span class="pastille ${t.ficheFinie ? 'p-ok' : 'p-neutre'}">fiche ${lignes} passage${lignes > 1 ? 's' : ''}${t.ficheFinie ? ' ✓' : ''}</span></div></div>`;
       }).join('')}
-      <details data-k="${id}"><summary>Voir leur travail</summary><div class="detail">${[1, 2, 3].map(n => detailTache(id, n)).join('')}</div></details></div>`;
+      <details data-k="${id}"><summary>Voir leur travail</summary><div class="detail">${TACHES_SEANCE.map(n => detailTache(id, n)).join('')}</div></details></div>`;
   }).join('')}</div>`;
 }
 function detailTache(id, n) {
@@ -229,7 +228,7 @@ function detailTache(id, n) {
 function projeter() {
   const ids = Object.keys(ateliers).sort().filter(id => taches[id]?.[projoTache]?.envoi);
   return `<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center"><h2>Les textes envoyés à Mme Leroy</h2>
-    <div class="choix-t">${[1, 2, 3].map(n => `<button class="${n === projoTache ? 'btn' : 'btn clair'}" type="button" data-projo="${n}">Tâche ${n}</button>`).join('')}<button class="btn bleu" type="button" id="b-plein">Plein écran</button></div></div>
+    <div class="choix-t">${TACHES_SEANCE.map(n => `<button class="${n === projoTache ? 'btn' : 'btn clair'}" type="button" data-projo="${n}">Tâche ${n}</button>`).join('')}<button class="btn bleu" type="button" id="b-plein">Plein écran</button></div></div>
     <p class="note">${esc(TACHES[projoTache].titre)}. Pour le retour : « Montrez-moi avant que je signe. Qu'avez-vous mis dans l'IA ? Qu'avez-vous corrigé ? Comment l'avez-vous vérifié ? »</p>
     <div class="projo">${ids.map((id, i) => `<div class="carte"><h3>Binôme ${String.fromCharCode(65 + i)}</h3><div class="texte">${esc(taches[id][projoTache].envoi.texte)}</div></div>`).join('') || '<p class="note">Aucun texte envoyé pour cette tâche.</p>'}</div>`;
 }

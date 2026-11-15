@@ -84,6 +84,8 @@ Lucas`,
 ${NOTES}` },
 ];
 
+// Séance d'une heure (Parnel 15/11) : deux tâches, plus de bonus ; le quiz garde 6 questions.
+export const TACHES_SEANCE = [1, 2];
 export const TACHES = {
   1: { titre: 'Répondre à M. Durand', court: 'M. Durand', courriel: 'durand', obligatoire: true,
        consigne: 'Faites rédiger par l\'IA une réponse à M. Durand, puis relisez-la et envoyez-la à Mme Leroy pour signature.',
@@ -141,18 +143,8 @@ export const QUESTIONS = [
     pourquoi: "Faux : elle produit une réponse probable, même quand elle cherche sur internet. Elle peut se tromper ou inventer, avec aplomb." },
   { id: 'q2', court: "Nom et adresse du client", type: 'vf', texte: "Je peux donner le nom et l'adresse d'un client pour gagner du temps.", bon: 'faux',
     pourquoi: "Faux : sans autorisation, pas de données personnelles. J'écris « le client » et je remets son nom moi-même au moment d'envoyer." },
-  { id: 'q3', court: "Demande précise", type: 'vf', texte: "Une demande précise donne une meilleure réponse.", bon: 'vrai',
-    pourquoi: "Vrai : qui elle est, ce que je veux, la situation, la forme. Les 4 éléments de la fiche mémo." },
   { id: 'q4', court: "Envoyer sans relire", type: 'vf', texte: "Un texte de l'IA peut être envoyé sans relecture s'il est bien écrit.", bon: 'faux',
     pourquoi: "Faux : bien écrit ne veut pas dire juste. « Une réponse sûre d'elle n'est pas une réponse juste. »" },
-  { id: 'q5', court: "Reformuler un courriel", type: 'vf', texte: "L'IA peut m'aider à reformuler un courriel trop sec.", bon: 'vrai',
-    pourquoi: "Vrai : reformuler, résumer, faire un premier brouillon, c'est ce qu'elle fait bien." },
-  { id: 'q6', court: "Corriger la réponse Durand", type: 'plusieurs', texte: "Voici la réponse de l'IA pour M. Durand. Avant de la faire signer, que faut-il corriger ou retirer ?",
-    sous: 'Cochez tout ce qui ne va pas.', citation: SECOURS[1],
-    options: [['adresse', "Son adresse et son numéro client, recopiés dans la réponse", true], ['rib', "Son RIB, recopié dans la réponse", true],
-      ['rembourse', "« Le remboursement sous 48 heures » : il n'y a rien à rembourser, la facture en double est seulement annulée", true],
-      ['excuses', "Les excuses pour le double envoi", false], ['objet', "La ligne « Objet »", false]],
-    pourquoi: "L'IA a recopié les données personnelles qu'on lui avait données, et elle a inventé un remboursement. Les excuses et l'objet sont bienvenus." },
   { id: 'q7', court: "Infos à ne pas donner", type: 'plusieurs', texte: "Quelles informations ne donne-t-on pas à une IA, sans autorisation ?", sous: 'Cochez tout ce qu\'il ne faut pas donner.',
     options: [['nom', "Le nom et l'adresse d'un client", true], ['rib', "Un RIB, des coordonnées bancaires", true], ['secu', "Un numéro de sécurité sociale", true],
       ['sante', "Une information de santé", true], ['mdp', "Un mot de passe", true], ['ton', "Le ton voulu : poli, vouvoiement", false], ['lettre', "« le client » à la place du nom", false]],

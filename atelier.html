@@ -173,7 +173,7 @@
 
 <script type="module">
 import { db, assistant, SALLE, suffixe, $, esc, slug, prenomPropre, memo, toast, copier, donneesPerso } from './commun.js';
-import { COURRIELS, TACHES, SECOURS, MODELE_DEMANDE } from './donnees.js';
+import { COURRIELS, TACHES, TACHES_SEANCE, SECOURS, MODELE_DEMANDE } from './donnees.js';
 import { collection, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const SEUL = 'Seul(e)';
@@ -261,7 +261,7 @@ function afficher() {
   if (vueTache > 3) return fini();
   $('v-fini').classList.add('cache'); $('v-travail').classList.remove('cache');
   $('t-binome').textContent = seul() ? MOI : `${AT.a} et ${AT.b}`;
-  $('etapes').innerHTML = [1, 2, 3].map(n => `<span class="${n === vueTache ? 'encours' : n < AT.tache ? 'fait' : ''}">${n < AT.tache ? '✓ ' : ''}${n}. ${esc(TACHES[n].court)}${TACHES[n].obligatoire ? '' : ' (bonus)'}</span>`).join('');
+  $('etapes').innerHTML = TACHES_SEANCE.map(n => `<span class="${n === vueTache ? 'encours' : n < AT.tache ? 'fait' : ''}">${n < AT.tache ? '✓ ' : ''}${n}. ${esc(TACHES[n].court)}${TACHES[n].obligatoire ? '' : ' (bonus)'}</span>`).join('');
   const t = TACHES[vueTache], p = pilote(vueTache), lecture = vueTache < AT.tache;
   $('role').classList.toggle('controle', !jeTape());
   $('r-qui').textContent = lecture ? `Tâche ${vueTache} terminée` : seul() ? `Tâche ${vueTache} : ${t.titre}` : jeTape() ? `Tâche ${vueTache} : c'est votre tour de taper` : `Tâche ${vueTache} : c'est au tour ${de(p)} de taper`;
@@ -281,7 +281,7 @@ function finDeTache(lecture) {
   if (lecture) { el.innerHTML = `<div class="bravo"><b>Tâche ${vueTache} terminée. Vous la relisez.</b><button class="btn bleu" type="button" data-aller="${AT.tache}">${AT.tache > 3 ? 'Retour' : 'Revenir à la tâche en cours'}</button></div>`; return lier(el); }
   if (!(T.envoi && T.ficheFinie)) { el.innerHTML = ''; return; }
   const suite = vueTache === 1 ? `<button class="btn vert" type="button" data-suivante="2">Passer à la tâche 2${seul() ? '' : ' : les rôles s\'inversent'}</button>`
-    : vueTache === 2 ? `<button class="btn vert" type="button" data-suivante="3">Tâche 3, en bonus${seul() ? '' : ' (rôles inversés)'}</button><button class="btn clair" type="button" data-suivante="4">Nous avons fini</button>`
+    : vueTache === 2 ? `<button class="btn vert" type="button" data-suivante="4">Terminer l'atelier</button>`
     : `<button class="btn vert" type="button" data-suivante="4">Terminer l'atelier</button>`;
   el.innerHTML = `<div class="bravo"><b>Tâche ${vueTache} faite : texte envoyé et fiche de tri remplie.</b>${suite}</div>`;
   lier(el);
