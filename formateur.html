@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vue formateur</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* Vue formateur : tout suivre depuis son téléphone ou le poste du formateur, et projeter les textes au retour. */
+.onglets{display:flex;gap:6px;flex-wrap:wrap;padding:10px max(16px,2vw);background:var(--carte);border-bottom:1px solid var(--trait);position:sticky;top:0;z-index:5}
+.onglets button{border:2px solid var(--trait);background:var(--carte);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:700;color:var(--doux)}
+.onglets button[aria-selected=true]{background:var(--plan);border-color:var(--plan);color:#fff}
+.onglets button b{color:var(--chantier)}
+.vue{max-width:1200px;margin:0 auto;padding:18px max(16px,2vw) 48px;display:grid;gap:16px}
+.vue h2{font-size:24px}
+.note{color:var(--doux);margin:0}
+.tableau{overflow-x:auto;background:var(--carte);border:1px solid var(--trait);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--trait);vertical-align:top}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--doux)}
+td img{width:44px;height:44px;object-fit:cover;border-radius:8px}
+.pastille{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700;white-space:nowrap}
+.p-jamais{background:var(--ok-clair);color:var(--ok)}.p-parfois{background:var(--orange-clair);color:var(--chantier-fonce)}.p-souvent{background:var(--bleu-clair);color:var(--plan-2)}
+.p-ok{background:var(--ok-clair);color:var(--ok)}.p-ko{background:var(--alerte-clair);color:var(--alerte)}.p-neutre{background:var(--papier);color:var(--doux)}
+.binomes{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.binomes .carte{display:grid;gap:8px;padding:12px 14px}
+.ateliers{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+.atelier{display:grid;gap:10px}
+.atelier h3{font-size:20px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.atelier h3 small{font-family:var(--f-texte);font-size:14px;color:var(--doux);font-weight:400}
+.t-ligne{display:grid;grid-template-columns:90px 1fr;gap:8px;align-items:center;font-size:14px;border-top:1px dashed var(--trait);padding-top:8px}
+.t-ligne .etats{display:flex;gap:4px;flex-wrap:wrap}
+.alerte-carte{background:var(--alerte-clair);color:var(--alerte);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:700}
+details summary{cursor:pointer;color:var(--plan-2);font-weight:700}
+.detail{display:grid;gap:8px;margin-top:8px}
+.msg{white-space:pre-wrap;border-radius:10px;padding:8px 10px;font-size:14px}
+.msg.user{background:var(--plan);color:#fff}.msg.assistant{background:#f3f1ec;border:1px solid var(--trait)}
+.envoi{white-space:pre-wrap;background:#fcfbf8;border:1px solid var(--trait);border-left:4px solid var(--ok);border-radius:10px;padding:8px 10px;font-size:14px}
+/* projection : gros caractères, côte à côte */
+.projo{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px}
+.projo .carte{font-size:19px}
+.projo .carte h3{font-size:22px;margin-bottom:8px}
+.projo .texte{white-space:pre-wrap;line-height:1.5}
+.choix-t{display:flex;gap:8px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.stats .carte{display:grid;gap:4px}
+.stats b{font-family:var(--f-titre);font-size:32px;color:var(--plan)}
+.barre{height:8px;border-radius:99px;background:var(--papier);overflow:hidden}.barre i{display:block;height:100%;background:var(--ok)}
+.liens{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.liens a{display:grid;gap:2px;background:var(--carte);border:1px solid var(--trait);border-radius:12px;padding:12px 14px;text-decoration:none;color:inherit}
+.liens a b{color:var(--plan-2)}.liens a span{color:var(--doux);font-size:14px}
+.grand{position:fixed;inset:0;background:var(--plan);color:#fff;z-index:40;display:grid;place-items:center;text-align:center;padding:24px;cursor:pointer}
+.grand b{font-family:var(--f-titre);font-size:clamp(28px,5.5vw,76px);word-break:break-all;line-height:1.1}
+.grand span{display:block;margin-top:18px;font-size:22px;opacity:.8}
+</style>
+</head>
+<body>
+<header class="haut"><div class="logo">B</div><div class="titre"><small>Vue formateur · <span id="salle"></span></small><b>L'IA dans les métiers de l'administratif</b></div>
+  <nav><a id="l-ecran" href="index.html#ecran" target="_blank" rel="noopener">Mur projeté</a></nav></header>
+<div class="onglets" role="tablist" id="onglets"></div>
+<main class="vue" id="vue"></main>
+
+<script type="module">
+import { db, SALLE, suffixe, $, esc } from './commun.js';
+import { TACHES, QUESTIONS } from './donnees.js';
+import { collection, doc, onSnapshot, setDoc, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+const IMAGES = ['soleil', 'cafe', 'sommet', 'bouchon', 'fusee', 'hamac', 'dossiers', 'foret', 'graine', 'orage', 'arcenciel', 'bateau'];
+const BASE = location.origin + location.pathname.replace(/formateur\.html$/, '');
+const DOC_SEANCE = 'https://claude.ai/artifact/4HmhfTF1uaapV4wXq9YtvC';
+$('salle').textContent = SALLE; $('l-ecran').href = 'index.html' + suffixe + '#ecran';
+
+let ONGLET = (() => { try { return sessionStorage.getItem('onglet') || 'stagiaires'; } catch { return 'stagiaires'; } })();
+let entrees = [], conf = {}, ateliers = {}, taches = {}, quiz = [], avis = [], projoTache = 2;
+const ecoutes = {};
+
+onSnapshot(query(collection(db, 'murs', SALLE, 'entrees'), orderBy('le')), s => { entrees = s.docs.map(d => d.data()); rendre(); });
+onSnapshot(doc(db, 'murs', SALLE, 'config', 'seance'), s => { conf = s.data() || {}; rendre(); });
+onSnapshot(collection(db, 'murs', SALLE, 'ateliers'), s => {
+  s.docs.forEach(d => {
+    ateliers[d.id] = d.data();
+    if (!ecoutes[d.id]) ecoutes[d.id] = onSnapshot(collection(db, 'murs', SALLE, 'ateliers', d.id, 'taches'), t => {
+      taches[d.id] = {}; t.docs.forEach(x => taches[d.id][x.id] = x.data()); rendre();
+    });
+  });
+  rendre();
+});
+onSnapshot(query(collection(db, 'murs', SALLE, 'quiz'), orderBy('le')), s => { quiz = s.docs.map(d => d.data()); rendre(); });
+onSnapshot(query(collection(db, 'murs', SALLE, 'avis'), orderBy('le')), s => { avis = s.docs.map(d => d.data()); rendre(); });
+
+const ONGLETS = [['stagiaires', 'Stagiaires et binômes', () => entrees.length], ['ateliers', 'Ateliers en direct', () => Object.keys(ateliers).length],
+  ['projeter', 'Projeter', null], ['quiz', 'Quiz', () => quiz.length], ['avis', 'Avis', () => avis.length], ['documents', 'Documents et liens', null]];
+
+function rendre() {
+  $('onglets').innerHTML = ONGLETS.map(([k, t, n]) => `<button role="tab" type="button" data-o="${k}" aria-selected="${k === ONGLET}">${t}${n ? ` <b>${n()}</b>` : ''}</button>`).join('');
+  $('onglets').querySelectorAll('[data-o]').forEach(b => b.onclick = () => { ONGLET = b.dataset.o; try { sessionStorage.setItem('onglet', ONGLET); } catch {} rendre(); });
+  const ouverts = [...document.querySelectorAll('details[open]')].map(d => d.dataset.k);
+  const y = scrollY;
+  const actif = document.activeElement?.id;
+  if (actif?.startsWith('b-sel')) return;   // ne pas redessiner pendant un choix de binôme
+  $('vue').innerHTML = ({ stagiaires, ateliers: vueAteliers, projeter, quiz: vueQuiz, avis: vueAvis, documents })[ONGLET]();
+  document.querySelectorAll('details').forEach(d => { if (ouverts.includes(d.dataset.k)) d.open = true; });
+  scrollTo(0, y);
+  brancher();
+}
+
+// ——— stagiaires et binômes ———
+function propositions() {
+  const par = k => entrees.filter(f => f.ia === k), novices = par('jamais'), autres = [...par('souvent'), ...par('parfois'), ...entrees.filter(f => !f.ia)];
+  const b = []; while (novices.length && autres.length) b.push([novices.shift(), autres.shift()]);
+  const reste = [...novices, ...autres]; while (reste.length) b.push(reste.splice(0, 2));
+  return b.map(p => ({ a: p[0]?.prenom || '', b: p[1]?.prenom || '' }));
+}
+let brouillonBinomes = null;
+function stagiaires() {
+  const valides = conf.binomes || [], liste = brouillonBinomes || (valides.length ? valides : propositions());
+  const prenoms = entrees.map(f => f.prenom), sel = (v, id) => `<select id="${id}">${['', ...prenoms].map(p => `<option ${p === v ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>`;
+  return `<section><h2>Les stagiaires</h2><p class="note">Leur fiche du brise-glace et leur usage de l'IA (eux seuls ne le voient pas au mur).</p></section>
+    <div class="tableau"><table><thead><tr><th>Image</th><th>Prénom et nom</th><th>Parcours</th><th>Mot</th><th>IA</th></tr></thead><tbody>
+    ${entrees.map(f => `<tr><td><img src="images/${f.image}-${IMAGES[f.image]}.jpg" alt=""></td><td><b>${esc(f.prenom)} ${esc(f.nom)}</b></td><td>${esc(f.parcours) || '—'}</td><td>${esc(f.mot)}</td><td>${f.ia ? `<span class="pastille p-${esc(f.ia)}">${esc(f.ia)}</span>` : '—'}</td></tr>`).join('') || '<tr><td colspan="5">Personne pour l\'instant.</td></tr>'}
+    </tbody></table></div>
+    <section><h2>Les binômes</h2><p class="note">${valides.length ? '✓ Validés : chaque stagiaire retrouve son binôme en tapant son prénom dans l\'atelier.' : 'Proposés : un « jamais » avec un « souvent » ou un « parfois ». Ajustez, puis validez : l\'atelier les proposera à chacun.'}</p></section>
+    <div class="binomes">${liste.map((b, i) => `<div class="carte"><b>Binôme ${i + 1}</b>${sel(b.a, `b-sel-${i}-a`)}${sel(b.b, `b-sel-${i}-b`)}</div>`).join('') || '<p class="note">Les binômes apparaîtront quand les stagiaires auront rempli leur fiche.</p>'}</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" type="button" id="b-valider" ${liste.length ? '' : 'disabled'}>${valides.length ? 'Enregistrer les changements' : 'Valider ces binômes'}</button>
+    ${valides.length ? '<button class="btn clair" type="button" id="b-reproposer">Reprendre les propositions</button>' : ''}<button class="mini" type="button" id="b-plus">+ Un binôme</button></div>`;
+}
+
+// ——— ateliers en direct ———
+function etatTache(id, n) {
+  const t = taches[id]?.[n] || {}, ms = t.messages || [], dem = ms.filter(m => m.role === 'user').length;
+  const envoyees = (t.alertes || []).filter(a => a.envoye), evitees = (t.alertes || []).filter(a => !a.envoye);
+  return { t, ms, dem, envoyees, evitees };
+}
+const pilote = (a, n) => a.b === 'Seul(e)' ? a.a : (n % 2 === 1 ? a.premier : (a.premier === a.a ? a.b : a.a));
+function vueAteliers() {
+  const ids = Object.keys(ateliers).sort();
+  if (!ids.length) return `<h2>Ateliers en direct</h2><p class="note">Aucun binôme n'est encore entré dans l'atelier (${esc(BASE)}atelier.html${esc(suffixe)}).</p>`;
+  return `<h2>Ateliers en direct</h2><p class="note">Mise à jour en direct. Une alerte rouge : le binôme a envoyé des données personnelles à l'IA malgré l'avertissement. Passez d'abord voir ceux-là.</p>
+  <div class="ateliers">${ids.map(id => {
+    const a = ateliers[id], cours = Math.min(a.tache, 3);
+    const alertes = [1, 2, 3].flatMap(n => etatTache(id, n).envoyees);
+    return `<div class="carte atelier"><h3>${esc(a.b === 'Seul(e)' ? a.a + ' (seul)' : a.a + ' et ' + a.b)}<small>${a.tache > 3 ? '✓ Terminé' : `Tâche ${cours} · ${esc(pilote(a, cours))} tape`}</small></h3>
+      ${alertes.length ? `<div class="alerte-carte">Données personnelles envoyées à l'IA : ${esc([...new Set(alertes.flatMap(x => x.quoi))].join(', '))}</div>` : ''}
+      ${[1, 2, 3].map(n => {
+        const { t, dem, evitees } = etatTache(id, n), lignes = t.fiche?.lignes?.length || 0;
+        if (n > a.tache && !dem) return '';
+        return `<div class="t-ligne"><b>${n}. ${esc(TACHES[n].court)}</b><div class="etats">
+          <span class="pastille ${dem ? 'p-ok' : 'p-neutre'}">${dem} demande${dem > 1 ? 's' : ''}</span>
+          ${evitees.length ? `<span class="pastille p-ok" title="Averti, a corrigé son message">${evitees.length} donnée${evitees.length > 1 ? 's' : ''} retirée${evitees.length > 1 ? 's' : ''}</span>` : ''}
+          <span class="pastille ${t.envoi ? 'p-ok' : 'p-neutre'}">${t.envoi ? '✓ envoyé' : 'pas envoyé'}</span>
+          <span class="pastille ${t.ficheFinie ? 'p-ok' : 'p-neutre'}">fiche ${lignes} passage${lignes > 1 ? 's' : ''}${t.ficheFinie ? ' ✓' : ''}</span></div></div>`;
+      }).join('')}
+      <details data-k="${id}"><summary>Voir leur travail</summary><div class="detail">${[1, 2, 3].map(n => detailTache(id, n)).join('')}</div></details></div>`;
+  }).join('')}</div>`;
+}
+function detailTache(id, n) {
+  const { t, ms } = etatTache(id, n);
+  if (!ms.length && !t.envoi && !t.fiche) return '';
+  const f = t.fiche || {};
+  return `<b>Tâche ${n} · ${esc(TACHES[n].titre)}</b>
+    ${ms.map(m => `<div class="msg ${m.role}">${esc(m.content)}${m.perso?.length ? `\n⚠ ${esc(m.perso.join(', '))}` : ''}</div>`).join('')}
+    ${t.envoi ? `<div class="envoi"><b>Envoyé à Mme Leroy (${esc(t.envoi.heure || '')}) :</b>\n${esc(t.envoi.texte)}</div>` : ''}
+    ${(f.lignes || []).length ? `<div class="tableau"><table><tr><th>Passage</th><th>Décision</th><th>Pourquoi</th><th>Vérifié</th></tr>${f.lignes.map(l => `<tr><td>${esc(l.passage)}</td><td>${esc(l.decision)}</td><td>${esc(l.pourquoi)}</td><td>${esc(l.verif)}</td></tr>`).join('')}</table></div>` : ''}
+    ${f.anonyme || f.pret ? `<p class="note">Données retirées : ${esc(f.anonyme || '—')} · prêt à signer : ${esc(f.pret || '—')}${f.parceque ? ' (' + esc(f.parceque) + ')' : ''}${f.ailleurs ? ' · vérifié ailleurs : ' + esc(f.ailleurs) : ''}</p>` : ''}`;
+}
+
+// ——— projeter au retour ———
+function projeter() {
+  const ids = Object.keys(ateliers).sort().filter(id => taches[id]?.[projoTache]?.envoi);
+  return `<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center"><h2>Les textes envoyés à Mme Leroy</h2>
+    <div class="choix-t">${[1, 2, 3].map(n => `<button class="${n === projoTache ? 'btn' : 'btn clair'}" type="button" data-projo="${n}">Tâche ${n}</button>`).join('')}<button class="btn bleu" type="button" id="b-plein">Plein écran</button></div></div>
+    <p class="note">${esc(TACHES[projoTache].titre)}. Pour le retour : « Montrez-moi avant que je signe. Qu'avez-vous mis dans l'IA ? Qu'avez-vous corrigé ? Comment l'avez-vous vérifié ? »</p>
+    <div class="projo">${ids.map((id, i) => `<div class="carte"><h3>Binôme ${String.fromCharCode(65 + i)}</h3><div class="texte">${esc(taches[id][projoTache].envoi.texte)}</div></div>`).join('') || '<p class="note">Aucun texte envoyé pour cette tâche.</p>'}</div>`;
+}
+
+// ——— quiz ———
+function juste(q, rep) {
+  if (rep == null) return false;
+  if (q.type === 'vf') return rep === q.bon;
+  if (q.type === 'un') return q.options.find(o => o[0] === rep)?.[2] === true;
+  const bons = q.options.filter(o => o[2]).map(o => o[0]);
+  return rep.length === bons.length && bons.every(b => rep.includes(b));
+}
+function vueQuiz() {
+  if (!quiz.length) return `<h2>Quiz individuel</h2><p class="note">Personne n'a encore répondu (${esc(BASE)}quiz.html${esc(suffixe)}).</p>`;
+  const moy = quiz.reduce((s, r) => s + r.score, 0) / quiz.length;
+  return `<h2>Quiz individuel</h2><div class="stats"><div class="carte"><span>Réponses</span><b>${quiz.length}</b></div><div class="carte"><span>Score moyen</span><b>${moy.toFixed(1).replace('.', ',')} / ${QUESTIONS.length}</b></div></div>
+    <h2 style="font-size:20px">Question par question</h2><div class="stats">${QUESTIONS.map((q, i) => {
+      const n = quiz.filter(r => juste(q, r.reponses?.[q.id])).length, p = Math.round(100 * n / quiz.length);
+      return `<div class="carte"><span>${i + 1}. ${esc(q.court)}</span><strong>${n} / ${quiz.length} juste${n > 1 ? 's' : ''}</strong><div class="barre"><i style="width:${p}%;${p < 60 ? 'background:var(--alerte)' : ''}"></i></div></div>`;
+    }).join('')}</div>
+    <div class="tableau"><table><thead><tr><th>Prénom</th><th>Score</th>${QUESTIONS.map((q, i) => `<th title="${esc(q.court)}">${i + 1}</th>`).join('')}<th>Sa phrase</th></tr></thead><tbody>
+    ${quiz.map(r => `<tr><td><b>${esc(r.prenom)}</b></td><td><span class="pastille ${r.score >= 7 ? 'p-ok' : 'p-ko'}">${r.score} / ${r.sur}</span></td>${QUESTIONS.map(q => `<td>${juste(q, r.reponses?.[q.id]) ? '✓' : '<span style="color:var(--alerte);font-weight:700">✗</span>'}</td>`).join('')}<td>${esc(r.reponses?.phrase || '')}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// ——— avis ———
+function vueAvis() {
+  if (!avis.length) return `<h2>Avis des stagiaires</h2><p class="note">Pas encore d'avis : ils le donnent à la fin du quiz, sans nom.</p>`;
+  const compte = (k, v) => avis.filter(a => a[k] === v).length;
+  return `<h2>Avis des stagiaires (${avis.length}, sans nom)</h2><div class="stats">${[['utile', 'Utile en stage ?'], ['clair', 'Explications claires ?']].map(([k, t]) => `<div class="carte"><span>${t}</span>${['Oui', 'Un peu', 'Non'].map(v => `<span>${v} : <strong>${compte(k, v)}</strong></span>`).join('')}</div>`).join('')}</div>
+    <div class="carte"><b>Ce qu'ils changeraient</b><ul>${avis.filter(a => a.changer).map(a => `<li>${esc(a.changer)}</li>`).join('') || '<li>Rien d\'écrit.</li>'}</ul></div>`;
+}
+
+// ——— documents et liens ———
+function documents() {
+  const l = (href, t, s, ext) => `<a href="${esc(href)}" ${ext ? 'target="_blank" rel="noopener"' : 'download'}><b>${t}</b><span>${s}</span></a>`;
+  return `<h2>Les pages de la séance</h2><div class="liens">
+    ${l('index.html' + suffixe + '#ecran', 'Mur projeté', 'Au vidéoprojecteur, pour le brise-glace (QR code)', 1)}
+    ${l('atelier.html' + suffixe, 'Atelier Batifer', 'Sur chaque poste, après l\'apport', 1)}
+    ${l('quiz.html' + suffixe, 'Quiz individuel', 'À la fin, chacun seul', 1)}
+    ${l('ressources.html' + suffixe, 'Ressources', 'Les PDF pour les stagiaires', 1)}</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" type="button" data-grand="atelier.html">Projeter l'adresse de l'atelier</button><button class="btn clair" type="button" data-grand="quiz.html">Projeter l'adresse du quiz</button></div>
+    <h2>Pour vous</h2><div class="liens">
+    ${l(DOC_SEANCE, 'Le déroulé complet', 'Le document « Séance IA », avec le corrigé et les adaptations', 1)}
+    ${l('docs/formateur/grille-observation.pdf', 'Grille d\'observation', 'À imprimer en 1 exemplaire')}
+    ${l('docs/formateur/plan-b-reponses.pdf', 'Plan B : réponses imprimées', 'Seulement si internet ne marche pas')}
+    ${l('docs/formateur/questionnaire-papier.pdf', 'Questionnaire de satisfaction papier', 'En secours de l\'avis en ligne')}</div>
+    <h2>Pour les stagiaires</h2><div class="liens">
+    ${l('docs/fiche-memo.pdf', 'Fiche mémo', '10 exemplaires')}${l('docs/dossier-batifer.pdf', 'Dossier Batifer', '5 exemplaires, en secours')}
+    ${l('docs/fiche-de-tri.pdf', 'Fiche de tri', 'En secours : elle est dans l\'atelier')}${l('docs/fiche-pedagogique.pdf', 'Fiche pédagogique', 'Version sans les réponses')}${l('docs/diapositives.pdf', 'Diapositives', 'À projeter')}</div>`;
+}
+
+function brancher() {
+  const v = $('vue');
+  v.querySelectorAll('[data-projo]').forEach(b => b.onclick = () => { projoTache = +b.dataset.projo; rendre(); });
+  $('b-plein')?.addEventListener('click', () => document.documentElement.requestFullscreen?.().catch(() => {}));
+  v.querySelectorAll('[data-grand]').forEach(b => b.onclick = () => {
+    const g = document.createElement('div'); g.className = 'grand';
+    g.innerHTML = `<div><b>${esc((BASE + b.dataset.grand + suffixe).replace(/^https:\/\//, ''))}</b><span>Touchez l'écran pour fermer</span></div>`;
+    g.onclick = () => g.remove(); document.body.append(g);
+  });
+  const lire = () => [...v.querySelectorAll('.binomes .carte')].map((c, i) => ({ a: $(`b-sel-${i}-a`).value, b: $(`b-sel-${i}-b`).value })).filter(b => b.a || b.b);
+  v.querySelectorAll('.binomes select').forEach(s => s.onchange = () => { brouillonBinomes = lire(); });
+  $('b-plus')?.addEventListener('click', () => { brouillonBinomes = [...lire(), { a: '', b: '' }]; rendre(); });
+  $('b-reproposer')?.addEventListener('click', () => { brouillonBinomes = propositions(); rendre(); });
+  $('b-valider')?.addEventListener('click', async e => {
+    const binomes = lire().filter(b => b.a && b.b); e.target.disabled = true;
+    try { await setDoc(doc(db, 'murs', SALLE, 'config', 'seance'), { binomes, maj: serverTimestamp() }, { merge: true }); brouillonBinomes = null; }
+    catch (err) { console.error(err); alert('Enregistrement impossible.'); }
+    rendre();
+  });
+}
+rendre();
+</script>
+</body>
+</html>

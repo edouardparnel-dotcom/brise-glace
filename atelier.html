@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atelier Batifer</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* Atelier en binôme : chaque stagiaire sur son poste ; celui qui tape (le pilote) et celui qui remplit la fiche de tri
+   voient l'avancée de l'autre en direct, et les rôles s'inversent à chaque tâche. */
+.etapes{display:flex;gap:6px;flex-wrap:wrap}
+.etapes span{border-radius:999px;padding:4px 12px;font-size:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25)}
+.etapes span.encours{background:var(--chantier);border-color:var(--chantier);font-weight:700}
+.etapes span.fait{background:var(--ok);border-color:var(--ok)}
+
+.role{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px max(16px,2vw);background:var(--orange-clair);border-bottom:1px solid var(--trait)}
+.role.controle{background:var(--bleu-clair)}
+.role .qui{font-family:var(--f-titre);font-size:20px;font-weight:700}
+.role .consigne{color:var(--doux);flex:1 1 320px}
+.suivi{display:flex;gap:8px;flex-wrap:wrap;padding:8px max(16px,2vw);border-bottom:1px solid var(--trait);background:var(--carte);font-size:14px}
+.suivi span{border-radius:999px;padding:3px 10px;background:var(--papier);border:1px solid var(--trait)}
+.suivi span.ok{background:var(--ok-clair);border-color:#b7dcc8;color:var(--ok);font-weight:700}
+
+.travail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:14px;padding:14px max(16px,2vw) 30px;align-items:start}
+.panneau{background:var(--carte);border:1px solid var(--trait);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.panneau>header{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--trait);padding:8px 8px 0;background:#faf8f3}
+.onglet{border:0;background:transparent;padding:8px 14px;border-radius:10px 10px 0 0;cursor:pointer;font-weight:700;color:var(--doux)}
+.onglet[aria-selected=true]{background:var(--carte);color:var(--plan);box-shadow:0 -2px 0 var(--chantier) inset}
+.panneau .contenu{padding:14px 16px;overflow:auto;max-height:calc(100vh - 230px);min-height:420px}
+.panneau h2{font-size:20px;margin-bottom:8px}
+
+/* boîte mail */
+.liste{display:grid;border:1px solid var(--trait);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.liste button{display:grid;grid-template-columns:1fr auto;gap:0 10px;text-align:left;border:0;border-bottom:1px solid var(--trait);background:var(--carte);padding:8px 12px;cursor:pointer}
+.liste button:last-child{border-bottom:0}
+.liste button b{font-size:15px}.liste button small{color:var(--doux);font-size:13px}
+.liste button .obj{grid-column:1/-1;font-size:14px;color:var(--doux);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liste button[aria-current=true]{background:var(--bleu-clair)}
+.liste button.utile{box-shadow:4px 0 0 var(--chantier) inset}
+.lecture .entete-mail{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:14px;color:var(--doux);margin-bottom:10px}
+.lecture .entete-mail b{color:var(--encre)}
+.lecture h3{font-size:19px;margin-bottom:6px}
+.texte-mail{white-space:pre-wrap;font-size:16px;background:#fcfbf8;border:1px solid var(--trait);border-radius:10px;padding:12px 14px}
+.outils-mail{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px}
+.piece{border:1px dashed var(--trait);border-radius:10px;padding:10px 12px;margin-top:10px}
+.piece>b{display:block;margin-bottom:6px}
+.facture{background:#fff;font-size:15px}
+.facture .f-tete{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.facture .f-logo{color:#D6790E;font-size:20px;letter-spacing:.04em;display:block}
+.facture small{color:var(--doux);font-size:12px}
+.facture .f-num{text-align:right}
+.facture table{border-collapse:collapse;width:100%;margin:8px 0}
+.facture th,.facture td{border:1px solid #c9c4b8;padding:5px 8px;text-align:left}
+.facture .d{text-align:right}
+.facture .f-ech{border:2px solid var(--plan);border-radius:8px;padding:8px 10px;font-size:14px}
+
+/* assistant */
+.fil{display:grid;gap:12px;margin-bottom:12px}
+.bulle{border-radius:14px;padding:10px 14px;white-space:pre-wrap;font-size:16px}
+.bulle.user{background:var(--plan);color:#fff;margin-left:12%}
+.bulle.assistant{background:#f3f1ec;border:1px solid var(--trait);margin-right:6%}
+.bulle.secours{border:2px dashed var(--chantier)}
+.bulle .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;white-space:normal}
+.bulle .note{display:block;font-size:13px;color:var(--chantier-fonce);font-weight:700;margin-bottom:4px;white-space:normal}
+.bulle .alerte{display:block;font-size:13px;background:var(--alerte-clair);color:var(--alerte);border-radius:8px;padding:4px 8px;margin-top:6px;white-space:normal}
+.vide-fil{color:var(--doux);border:2px dashed var(--trait);border-radius:12px;padding:18px;text-align:center}
+.saisie{display:grid;gap:8px;border-top:1px solid var(--trait);padding-top:12px}
+.saisie textarea{min-height:110px}
+.saisie .ligne{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.saisie .ligne .btn{margin-left:auto}
+.ecrit{color:var(--doux);font-style:italic}
+
+/* brouillon */
+.envoi-tete{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:15px;margin-bottom:8px}
+.envoi-tete span{color:var(--doux)}
+#brouillon{min-height:280px;font-size:16px;line-height:1.5}
+.relu{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:10px 0;font-size:15px}
+.relu label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.envoye{background:var(--ok-clair);color:var(--ok);border-radius:10px;padding:10px 12px;font-weight:700}
+
+/* paragraphe à reprendre dans la fiche */
+.para{position:relative;padding-right:34px;margin:0 0 8px}
+.para .plus{position:absolute;right:0;top:0;width:28px;height:28px;border-radius:50%;border:1px solid var(--trait);background:var(--carte);cursor:pointer;font-weight:700;color:var(--chantier-fonce)}
+
+/* fiche de tri */
+.fiche-tri{display:grid;gap:12px}
+.fiche-tri .question{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.fiche-tri .question b{flex:1 1 260px}
+.choix{display:flex;gap:6px;flex-wrap:wrap}
+.choix label{border:2px solid var(--trait);border-radius:999px;padding:4px 12px;background:var(--carte);cursor:pointer;font-size:15px}
+.choix input{position:absolute;opacity:0;pointer-events:none}
+.choix label:has(input:checked){border-color:var(--plan-2);background:var(--plan);color:#fff}
+.choix label.g:has(input:checked){background:var(--ok);border-color:var(--ok)}
+.choix label.c:has(input:checked){background:var(--chantier);border-color:var(--chantier)}
+.choix label.s:has(input:checked){background:var(--alerte);border-color:var(--alerte)}
+.ligne-tri{border:1px solid var(--trait);border-radius:12px;padding:10px 12px;display:grid;gap:8px;background:#fcfbf8}
+.ligne-tri .haut-l{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.ligne-tri textarea{min-height:52px}
+.ligne-tri .deux{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lecture-seule .ligne-tri textarea,.lecture-seule .ligne-tri input{background:#f4f2ed}
+.auto{font-size:14px;border-radius:10px;padding:8px 10px;background:var(--papier)}
+.auto.mal{background:var(--alerte-clair);color:var(--alerte)}
+.auto.bien{background:var(--ok-clair);color:var(--ok)}
+
+/* fin de tâche */
+.bravo{margin:14px max(16px,2vw) 0;background:var(--ok-clair);border:2px solid var(--ok);border-radius:14px;padding:14px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.bravo b{font-family:var(--f-titre);font-size:20px;color:var(--ok);flex:1 1 300px}
+
+/* entrée */
+.duo{display:flex;gap:10px;flex-wrap:wrap}
+.duo .btn{flex:1 1 200px}
+
+@media (max-width:900px){.travail{grid-template-columns:1fr}.panneau .contenu{max-height:none;min-height:0}}
+</style>
+</head>
+<body>
+
+<!-- 1. Qui suis-je, avec qui ? -->
+<main class="etroit" id="v-entree">
+  <div class="haut" style="border-radius:16px"><div class="logo">B</div><div class="titre"><small>Atelier · mise en situation</small><b>Batifer, mardi 17 novembre, 9 h</b></div></div>
+  <div class="carte">
+    <h1>Bonjour !</h1>
+    <p>Vous travaillez en binôme, chacun sur son poste. Vous verrez sur votre écran ce que fait votre binôme, et quand c'est votre tour.</p>
+    <form id="f-entree" autocomplete="off" style="display:grid;gap:14px">
+      <label class="champ" for="moi">Votre prénom<input type="text" id="moi" list="prenoms" maxlength="40" required></label>
+      <label class="champ" for="lui">Le prénom de votre binôme<span id="aide-binome">Celui ou celle avec qui vous travaillez aujourd'hui.</span><input type="text" id="lui" list="prenoms" maxlength="40"></label>
+      <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="seul"> Je travaille seul(e) aujourd'hui</label>
+      <datalist id="prenoms"></datalist>
+      <p class="erreur" id="e-entree" role="alert"></p>
+      <button class="btn" type="submit">Entrer chez Batifer</button>
+    </form>
+  </div>
+  <div class="carte cache" id="c-premier">
+    <h2 style="margin-bottom:6px">Qui tape à la tâche 1 ?</h2>
+    <p style="margin-top:0;color:var(--doux)">Celui ou celle qui utilise le moins l'IA commence. L'autre remplit la fiche de tri. À la tâche suivante, vous échangez.</p>
+    <div class="duo" id="duo"></div>
+  </div>
+</main>
+
+<!-- 2. L'atelier -->
+<div id="v-travail" class="cache">
+  <header class="haut">
+    <div class="logo">B</div>
+    <div class="titre"><small>Atelier Batifer</small><b id="t-binome"></b></div>
+    <div class="etapes" id="etapes"></div>
+    <nav><a href="ressources.html" target="_blank" rel="noopener">Ressources</a><button type="button" id="b-quitter">Changer de binôme</button></nav>
+  </header>
+  <div class="role" id="role"><div class="qui" id="r-qui"></div><div class="consigne" id="r-consigne"></div></div>
+  <div class="suivi" id="suivi" aria-live="polite"></div>
+  <div id="fin-tache"></div>
+  <div class="travail" id="zone"></div>
+</div>
+
+<!-- 3. Fini -->
+<main class="etroit cache" id="v-fini">
+  <div class="carte" style="text-align:center;display:grid;gap:12px">
+    <h1>Bravo, votre binôme a terminé !</h1>
+    <p>Mme Leroy a vos textes. Avant le retour collectif, chacun répond seul au quiz : il vérifie ce que <b>vous</b> avez retenu.</p>
+    <a class="btn" id="l-quiz" href="quiz.html">Faire mon quiz individuel</a>
+    <button class="mini" type="button" id="b-revoir" style="justify-self:center">Revoir nos tâches</button>
+  </div>
+</main>
+
+<dialog id="d-perso"><div class="corps">
+  <h2>Attention : données personnelles</h2>
+  <p id="d-perso-texte"></p>
+  <p style="margin:0"><b>Règle d'or n° 1 :</b> sans autorisation, je ne transmets pas de données personnelles ou confidentielles à une IA. J'écris « le client », « M. X », et je remets les vraies informations moi-même au moment d'envoyer.</p>
+  <div class="actions"><button class="btn clair" type="button" id="d-envoyer">Envoyer quand même</button><button class="btn" type="button" id="d-corriger">Je corrige mon message</button></div>
+</div></dialog>
+
+<script type="module">
+import { db, assistant, SALLE, suffixe, $, esc, slug, prenomPropre, memo, toast, copier, donneesPerso } from './commun.js';
+import { COURRIELS, TACHES, SECOURS, MODELE_DEMANDE } from './donnees.js';
+import { collection, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+const SEUL = 'Seul(e)';
+let ID = null, MOI = null, AT = null, T = {}, N = 1, vueTache = null, ecoute = null;
+let ongletG = null, ongletD = null, mailOuvert = null, attente = false, brouillonLocal = null, nbMessages = -1;
+const relus = new Set();   // cases « j'ai relu » cochées sur ce poste
+const ecrire = {};   // écritures retardées (brouillon, fiche)
+
+// ——— 1. entrée ———
+(async () => {
+  const deja = memo('atelier');
+  if (deja?.id) { ID = deja.id; MOI = deja.moi; return rejoindre(); }
+  const [entrees, conf] = await Promise.all([getDocs(collection(db, 'murs', SALLE, 'entrees')).catch(() => null), getDoc(doc(db, 'murs', SALLE, 'config', 'seance')).catch(() => null)]);
+  const noms = new Set(); entrees?.forEach(d => noms.add(d.data().prenom));
+  const binomes = conf?.data()?.binomes || [];
+  binomes.forEach(b => [b.a, b.b].forEach(p => p && noms.add(p)));
+  $('prenoms').innerHTML = [...noms].sort().map(p => `<option value="${esc(p)}">`).join('');
+  $('moi').addEventListener('change', () => {
+    const m = $('moi').value.trim().toLowerCase(), b = binomes.find(x => [x.a, x.b].some(p => p?.toLowerCase() === m));
+    if (b) { $('lui').value = b.a.toLowerCase() === m ? b.b : b.a; $('aide-binome').textContent = 'Proposé par votre formateur.'; }
+  });
+  $('seul').addEventListener('change', e => { $('lui').disabled = e.target.checked; });
+})();
+
+$('f-entree').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const moi = prenomPropre($('moi').value), seul = $('seul').checked, lui = seul ? SEUL : prenomPropre($('lui').value), err = $('e-entree');
+  if (!moi) return err.textContent = 'Écrivez votre prénom.';
+  if (!lui) return err.textContent = 'Écrivez le prénom de votre binôme, ou cochez « Je travaille seul(e) ».';
+  if (!seul && slug(moi) === slug(lui)) return err.textContent = 'Votre binôme doit avoir un autre prénom que vous.';
+  err.textContent = '';
+  ID = seul ? 'seul-' + slug(moi) : [slug(moi), slug(lui)].sort().join('-'); MOI = moi;
+  const s = await getDoc(doc(db, 'murs', SALLE, 'ateliers', ID)).catch(e => { err.textContent = 'Connexion impossible. Vérifiez internet et réessayez.'; console.error(e); return null; });
+  if (!s) return;
+  if (s.exists()) {
+    const d = s.data();
+    if (![d.a, d.b].some(p => slug(p) === slug(moi))) return err.textContent = `Ce binôme existe déjà avec ${d.a} et ${d.b}.`;
+    MOI = [d.a, d.b].find(p => slug(p) === slug(moi));
+    memo('atelier', { id: ID, moi: MOI }); return rejoindre();
+  }
+  if (seul) return creer(moi, SEUL, moi);
+  $('c-premier').classList.remove('cache');
+  $('duo').innerHTML = [moi, lui].map(p => `<button class="btn ${p === moi ? '' : 'bleu'}" type="button" data-p="${esc(p)}">${p === moi ? 'Moi, ' + esc(p) : esc(p)}</button>`).join('');
+  $('duo').onclick = e => { const b = e.target.closest('[data-p]'); if (b) creer(moi, lui, b.dataset.p); };
+});
+
+async function creer(a, b, premier) {
+  await setDoc(doc(db, 'murs', SALLE, 'ateliers', ID), { a, b, premier, tache: 1, maj: serverTimestamp() });
+  memo('atelier', { id: ID, moi: MOI }); rejoindre();
+}
+
+$('b-quitter').addEventListener('click', () => {
+  if (!confirm('Quitter ce binôme sur ce poste ? Le travail déjà fait est gardé.')) return;
+  memo('atelier', {}); location.reload();
+});
+
+// ——— 2. l'atelier en direct ———
+function rejoindre() {
+  $('v-entree').classList.add('cache');
+  onSnapshot(doc(db, 'murs', SALLE, 'ateliers', ID), s => {
+    if (!s.exists()) { memo('atelier', {}); location.reload(); return; }
+    AT = s.data();
+    if (!ecoute || AT.tache !== N) {   // première lecture, ou le binôme vient de passer à la tâche suivante : les deux postes suivent
+      N = AT.tache;
+      if (N > 3) { ecoute?.(); ecoute = () => {}; vueTache = 4; } else suivreTache(N);
+    }
+    afficher();
+  });
+}
+
+function suivreTache(n) {
+  ecoute?.(); vueTache = n; T = {}; brouillonLocal = null; ongletG = ongletD = null; mailOuvert = TACHES[n].courriel; relus.clear(); nbMessages = -1;
+  ecoute = onSnapshot(doc(db, 'murs', SALLE, 'ateliers', ID, 'taches', String(n)), s => { T = s.data() || {}; afficher(); });
+}
+
+const autre = () => AT.a === MOI ? AT.b : AT.a;
+const seul = () => AT.b === SEUL;
+const pilote = n => seul() ? MOI : (n % 2 === 1 ? AT.premier : (AT.premier === AT.a ? AT.b : AT.a));
+const jeTape = () => pilote(vueTache) === MOI;
+const messages = () => T.messages || [];
+const de = p => (/^[aeiouyhàâéèêîïôû]/i.test(p) ? "d'" : 'de ') + p;   // « au tour d'Awa », « au tour de Koffi »
+
+function afficher() {
+  if (!AT) return;
+  if (vueTache > 3) return fini();
+  $('v-fini').classList.add('cache'); $('v-travail').classList.remove('cache');
+  $('t-binome').textContent = seul() ? MOI : `${AT.a} et ${AT.b}`;
+  $('etapes').innerHTML = [1, 2, 3].map(n => `<span class="${n === vueTache ? 'encours' : n < AT.tache ? 'fait' : ''}">${n < AT.tache ? '✓ ' : ''}${n}. ${esc(TACHES[n].court)}${TACHES[n].obligatoire ? '' : ' (bonus)'}</span>`).join('');
+  const t = TACHES[vueTache], p = pilote(vueTache), lecture = vueTache < AT.tache;
+  $('role').classList.toggle('controle', !jeTape());
+  $('r-qui').textContent = lecture ? `Tâche ${vueTache} terminée` : seul() ? `Tâche ${vueTache} : ${t.titre}` : jeTape() ? `Tâche ${vueTache} : c'est votre tour de taper` : `Tâche ${vueTache} : c'est au tour ${de(p)} de taper`;
+  $('r-consigne').innerHTML = esc(t.consigne) + (seul() || lecture ? '' : jeTape() ? ` <b>${esc(autre())} remplit la fiche de tri et suit votre travail sur son écran.</b>` : ` <b>Vous remplissez la fiche de tri et vous suivez son travail ici, en direct.</b>`);
+  const ms = messages(), demandes = ms.filter(m => m.role === 'user').length;
+  $('suivi').innerHTML = `<span class="${demandes ? 'ok' : ''}">${demandes ? '✓' : '1.'} Demande à l'IA${demandes ? ` (${demandes})` : ''}</span>`
+    + `<span class="${(T.brouillon || '').trim() ? 'ok' : ''}">${(T.brouillon || '').trim() ? '✓' : '2.'} Texte préparé</span>`
+    + `<span class="${T.envoi ? 'ok' : ''}">${T.envoi ? '✓' : '3.'} Envoyé à Mme Leroy</span>`
+    + `<span class="${T.ficheFinie ? 'ok' : ''}">${T.ficheFinie ? '✓' : '4.'} Fiche de tri${seul() ? '' : ` (${esc(pilote(vueTache) === AT.a ? AT.b : AT.a)})`}</span>`
+    + (attente && !jeTape() ? '' : '') + (ms.length && ms.at(-1).role === 'user' && !jeTape() ? `<span class="ecrit">${esc(p)} attend la réponse de l'IA…</span>` : '');
+  finDeTache(lecture);
+  dessinerZone(lecture);
+}
+
+function finDeTache(lecture) {
+  const el = $('fin-tache');
+  if (lecture) { el.innerHTML = `<div class="bravo"><b>Tâche ${vueTache} terminée. Vous la relisez.</b><button class="btn bleu" type="button" data-aller="${AT.tache}">${AT.tache > 3 ? 'Retour' : 'Revenir à la tâche en cours'}</button></div>`; return lier(el); }
+  if (!(T.envoi && T.ficheFinie)) { el.innerHTML = ''; return; }
+  const suite = vueTache === 1 ? `<button class="btn vert" type="button" data-suivante="2">Passer à la tâche 2${seul() ? '' : ' : les rôles s\'inversent'}</button>`
+    : vueTache === 2 ? `<button class="btn vert" type="button" data-suivante="3">Tâche 3, en bonus${seul() ? '' : ' (rôles inversés)'}</button><button class="btn clair" type="button" data-suivante="4">Nous avons fini</button>`
+    : `<button class="btn vert" type="button" data-suivante="4">Terminer l'atelier</button>`;
+  el.innerHTML = `<div class="bravo"><b>Tâche ${vueTache} faite : texte envoyé et fiche de tri remplie.</b>${suite}</div>`;
+  lier(el);
+}
+
+function lier(el) {
+  el.querySelectorAll('[data-suivante]').forEach(b => b.onclick = async () => {
+    const n = +b.dataset.suivante; b.disabled = true;
+    await setDoc(doc(db, 'murs', SALLE, 'ateliers', ID), { tache: n, maj: serverTimestamp() }, { merge: true });   // la suite arrive par onSnapshot
+  });
+  el.querySelectorAll('[data-aller]').forEach(b => b.onclick = () => { const n = +b.dataset.aller; if (n > 3) { ecoute?.(); ecoute = () => {}; vueTache = 4; afficher(); } else suivreTache(n); });
+}
+
+function fini() {
+  $('v-travail').classList.add('cache'); $('v-fini').classList.remove('cache');
+  $('l-quiz').href = 'quiz.html' + suffixe;
+  memo('prenom', MOI);
+  $('b-revoir').onclick = () => suivreTache(1);
+}
+
+// ——— les panneaux ———
+function dessinerZone(lecture) {
+  const z = $('zone'), focus = document.activeElement, idf = focus?.id, sel = [focus?.selectionStart, focus?.selectionEnd];
+  const defil = { g: $('p-gauche')?.scrollTop || 0, d: $('p-droite')?.scrollTop || 0, onglet: ongletG };
+  const gauche = seul() || jeTape() ? ['mail', 'brouillon', ...(seul() ? ['fiche'] : [])] : ['direct', 'brouillon', 'mail'];
+  const droite = seul() || jeTape() ? 'ia' : 'fiche';
+  // pour la relance (tâche 2), celui qui remplit la fiche part du texte de Lucas, à comparer à la facture
+  ongletG = gauche.includes(ongletG) ? ongletG : (vueTache === 2 && !seul() && !jeTape() ? 'brouillon' : gauche[0]);
+  const noms = { mail: 'Boîte de réception', brouillon: 'Texte à envoyer', fiche: 'Fiche de tri', direct: `Ce que fait ${seul() ? '' : esc(pilote(vueTache))}` };
+  z.innerHTML = `<section class="panneau"><header role="tablist">${gauche.map(o => `<button class="onglet" role="tab" aria-selected="${o === ongletG}" data-onglet="${o}">${noms[o]}</button>`).join('')}</header>
+      <div class="contenu" id="p-gauche">${panneau(ongletG, lecture)}</div></section>
+    <section class="panneau"><header><span class="onglet" aria-selected="true">${droite === 'ia' ? 'Assistant IA' : 'Fiche de tri'}</span></header>
+      <div class="contenu" id="p-droite">${panneau(droite, lecture)}</div></section>`;
+  z.querySelectorAll('[data-onglet]').forEach(b => b.onclick = () => { ongletG = b.dataset.onglet; dessinerZone(lecture); });
+  brancher(z, lecture);
+  if (idf && $(idf)) { const el = $(idf); el.focus({ preventScroll: true }); try { if (sel[0] != null) el.setSelectionRange(sel[0], sel[1]); } catch {} }
+  // garder la position de lecture ; descendre en bas du fil seulement quand un message arrive
+  if (defil.onglet === ongletG) $('p-gauche').scrollTop = defil.g;
+  $('p-droite').scrollTop = defil.d;
+  const n = messages().length + (attente ? 1 : 0), fil = $('fil');
+  if (fil && n !== nbMessages) fil.parentElement.scrollTop = fil.parentElement.scrollHeight;
+  nbMessages = n;
+}
+
+function panneau(nom, lecture) {
+  if (nom === 'mail') return boiteMail();
+  if (nom === 'brouillon') return brouillon(lecture || !(seul() || jeTape()));
+  if (nom === 'ia') return assistantIA(lecture);
+  if (nom === 'fiche') return ficheTri(lecture || (!seul() && jeTape()));
+  if (nom === 'direct') return direct();
+  return '';
+}
+
+function paras(texte, ajout) {
+  return texte.split(/\n\s*\n/).filter(x => x.trim()).map(x => `<p class="para">${esc(x)}${ajout ? `<button class="plus" type="button" title="Ajouter ce passage à la fiche de tri" data-ajout="${esc(x)}">+</button>` : ''}</p>`).join('');
+}
+
+function boiteMail() {
+  const m = COURRIELS.find(c => c.id === mailOuvert) || COURRIELS[0], pilote = seul() || jeTape();
+  return `<div class="liste">${COURRIELS.map(c => `<button type="button" data-mail="${c.id}" aria-current="${c.id === m.id}" class="${c.taches.includes(vueTache) && c.id !== 'leroy' ? 'utile' : ''}"><b>${esc(c.de)}</b><small>${esc(c.heure)}</small><span class="obj">${esc(c.objet)}${c.pieces ? ' · 📎 ' + c.pieces.length : ''}</span></button>`).join('')}</div>
+    <div class="lecture"><h3>${esc(m.objet)}</h3>
+    <div class="entete-mail"><span>De</span><b>${esc(m.de)} &lt;${esc(m.adresse)}&gt;</b><span>À</span><span>vous (accueil@batifer-exemple.fr)</span></div>
+    <div class="texte-mail">${esc(m.corps)}</div>
+    <div class="outils-mail">${pilote ? `<button class="mini" type="button" data-dans="${m.id}">Mettre dans ma demande à l'IA</button>` : ''}<button class="mini" type="button" data-copie="${m.id}">Copier le texte</button></div>
+    ${(m.pieces || []).map(p => `<div class="piece"><b>📎 ${esc(p.nom)}</b>${p.html || `<div class="texte-mail">${esc(p.texte)}</div>`}
+      <div class="outils-mail">${pilote ? `<button class="mini" type="button" data-dans="${m.id}:${p.id}">Mettre dans ma demande à l'IA</button>` : ''}<button class="mini" type="button" data-copie="${m.id}:${p.id}">Copier le texte</button></div></div>`).join('')}</div>`;
+}
+
+function texteMail(cle) {
+  const [id, pid] = cle.split(':'), m = COURRIELS.find(c => c.id === id);
+  return pid ? m.pieces.find(p => p.id === pid).texte : m.corps;
+}
+
+function brouillon(lectureSeule) {
+  const t = TACHES[vueTache], texte = brouillonLocal ?? T.brouillon ?? t.brouillonDepart ?? '';
+  const envoi = T.envoi ? `<p class="envoye">✓ Envoyé à Mme Leroy pour signature${T.envoi.heure ? ' à ' + esc(T.envoi.heure) : ''}.</p>` : '';
+  if (lectureSeule) {
+    return `<div class="envoi-tete"><span>À</span><b>${esc(t.envoi.a)}</b><span>Objet</span><b>${esc(t.envoi.objet)}</b></div>${envoi}
+      ${texte.trim() ? `<div class="texte-mail" style="white-space:normal">${paras(texte, !seul() && !jeTape() && vueTache >= AT.tache)}</div>` : `<p class="vide-fil">${esc(pilote(vueTache))} n'a pas encore préparé le texte.</p>`}`;
+  }
+  return `<div class="envoi-tete"><span>À</span><b>${esc(t.envoi.a)}</b><span>Objet</span><b>${esc(t.envoi.objet)}</b></div>
+    <textarea id="brouillon" aria-label="Le texte à envoyer" placeholder="Écrivez ici, ou insérez une réponse de l'IA avec « Mettre dans mon texte ».">${esc(texte)}</textarea>
+    <div class="relu"><b>Avant d'envoyer, j'ai relu :</b>${['les noms', 'les montants', 'les dates et délais'].map((x, i) => `<label><input type="checkbox" class="relu-c" data-r="${i}" ${relus.has(i) ? 'checked' : ''}> ${x}</label>`).join('')}</div>
+    ${envoi}<button class="btn vert" type="button" id="b-envoyer" disabled>${T.envoi ? 'Renvoyer la version corrigée' : 'Envoyer à Mme Leroy pour signature'}</button>`;
+}
+
+function assistantIA(lecture) {
+  const ms = messages();
+  const fil = ms.length ? ms.map((m, i) => bulle(m, i, true)).join('') : `<p class="vide-fil">Écrivez votre demande ci-dessous. Besoin d'aide ? « Partir du modèle en 4 éléments ».</p>`;
+  return `<div class="fil" id="fil">${fil}${attente ? '<p class="ecrit">L\'assistant écrit…</p>' : ''}</div>
+    ${lecture ? '' : `<div class="saisie"><textarea id="demande" placeholder="Votre demande à l'IA. Rappel : sans nom, sans adresse, sans RIB." aria-label="Votre demande à l'IA"></textarea>
+    <div class="ligne"><button class="mini" type="button" id="b-modele">Partir du modèle en 4 éléments</button><span style="color:var(--doux);font-size:14px">Ctrl + Entrée pour envoyer</span><button class="btn" type="button" id="b-demander" ${attente ? 'disabled' : ''}>Envoyer à l'IA</button></div></div>`}`;
+}
+
+function bulle(m, i, actions) {
+  if (m.role === 'user') return `<div class="bulle user">${esc(m.content)}${m.perso?.length ? `<span class="alerte">Contenait : ${esc(m.perso.join(', '))}</span>` : ''}</div>`;
+  const outils = actions && (seul() || jeTape()) && vueTache >= AT.tache ? `<div class="actions"><button class="mini" type="button" data-inserer="${i}">Mettre dans mon texte</button><button class="mini" type="button" data-copiemsg="${i}">Copier</button></div>` : '';
+  return `<div class="bulle assistant ${m.secours ? 'secours' : ''}">${m.secours ? '<span class="note">L\'assistant ne répondait pas : voici une réponse obtenue plus tôt avec une demande semblable.</span>' : ''}${esc(m.content)}${outils}</div>`;
+}
+
+function direct() {
+  const ms = messages(), p = esc(pilote(vueTache));
+  const fil = ms.length ? ms.map(m => m.role === 'user' ? bulle(m, 0, false) : `<div class="bulle assistant ${m.secours ? 'secours' : ''}" style="white-space:normal">${m.secours ? '<span class="note">Réponse de secours (l\'assistant ne répondait pas).</span>' : ''}${paras(m.content, vueTache >= AT.tache)}</div>`).join('')
+    : `<p class="vide-fil">${p} n'a encore rien demandé à l'IA. Sa conversation s'affichera ici en direct.</p>`;
+  return `<p style="margin-top:0;color:var(--doux);font-size:15px">La conversation de ${p} avec l'IA, en direct. Le bouton <b>+</b> ajoute un passage à votre fiche de tri.</p><div class="fil" id="fil">${fil}</div>`;
+}
+
+const DECISIONS = [['garder', 'Je garde', 'g'], ['corriger', 'Je corrige', 'c'], ['supprimer', 'Je supprime', 's']];
+function ficheTri(lectureSeule) {
+  const f = T.fiche || {}, lignes = f.lignes || [], d = lectureSeule ? 'disabled' : '';
+  const premiere = messages().find(m => m.role === 'user'), perso = messages().filter(m => m.role === 'user').flatMap(m => m.perso || []);
+  const auto = premiere ? (perso.length ? `<div class="auto mal">Données personnelles envoyées à l'IA : ${esc([...new Set(perso)].join(', '))}.</div>` : `<div class="auto bien">Aucune donnée personnelle repérée dans les demandes à l'IA.</div>`) : '';
+  const ligne = (l, i) => `<div class="ligne-tri" data-i="${i}"><div class="haut-l"><b>Passage ${i + 1}</b>${lectureSeule ? '' : `<button class="mini" type="button" data-retirer="${i}">Retirer</button>`}</div>
+      <textarea data-champ="passage" id="l${i}-passage" aria-label="Passage ${i + 1}" ${d}>${esc(l.passage || '')}</textarea>
+      <div class="choix">${DECISIONS.map(([v, t, c]) => `<label class="${c}"><input type="radio" name="dec${i}" value="${v}" data-champ="decision" ${l.decision === v ? 'checked' : ''} ${d}>${t}</label>`).join('')}</div>
+      <div class="deux"><input type="text" data-champ="pourquoi" id="l${i}-pourquoi" placeholder="Pourquoi ?" aria-label="Pourquoi" value="${esc(l.pourquoi || '')}" ${d}>
+      <input type="text" data-champ="verif" id="l${i}-verif" list="verifs" placeholder="Comment l'avons-nous vérifié ?" aria-label="Comment l'avons-nous vérifié" value="${esc(l.verif || '')}" ${d}></div></div>`;
+  return `<div class="fiche-tri ${lectureSeule ? 'lecture-seule' : ''}" id="fiche">
+    ${lectureSeule && !seul() ? `<p style="margin:0;color:var(--doux)">${esc(pilote(vueTache) === AT.a ? AT.b : AT.a)} remplit la fiche de tri. Vous la voyez ici en direct.</p>` : ''}
+    <div><b>Ce que nous avons écrit à l'IA</b><div class="auto">${premiere ? esc(premiere.content.slice(0, 400)) + (premiere.content.length > 400 ? '…' : '') : 'Rien pour l\'instant.'}</div></div>
+    ${auto}
+    <div class="question"><b>Avons-nous retiré les données personnelles ?</b><div class="choix">${['oui', 'non'].map(v => `<label><input type="radio" name="anon" value="${v}" data-f="anonyme" ${f.anonyme === v ? 'checked' : ''} ${d}>${v}</label>`).join('')}</div></div>
+    <div><b>La réponse de l'IA, passage par passage</b><p style="margin:2px 0 0;color:var(--doux);font-size:14px">Je garde, je corrige ou je supprime, avec une raison et la façon dont nous l'avons vérifié.</p></div>
+    ${lignes.map(ligne).join('') || `<p class="vide-fil">Ajoutez les passages avec le bouton + à côté de la réponse de l'IA, ou avec « Ajouter un passage ».</p>`}
+    ${lectureSeule ? '' : '<button class="mini" type="button" id="b-ligne" style="justify-self:start">+ Ajouter un passage</button>'}
+    <datalist id="verifs"><option value="Comparé avec la facture"><option value="Vérifié la date du jour"><option value="Relu le courriel du client"><option value="Relu les notes de réunion"><option value="Consigne de Mme Leroy"><option value="Vérifié sur service-public.fr"></datalist>
+    <label class="champ">Ce que nous avons vérifié ailleurs (facture, notes, site officiel)<input type="text" data-f="ailleurs" id="f-ailleurs" value="${esc(f.ailleurs || '')}" ${d}></label>
+    <div class="question"><b>Notre texte est-il prêt à être signé par Mme Leroy ?</b><div class="choix">${['oui', 'non'].map(v => `<label><input type="radio" name="pret" value="${v}" data-f="pret" ${f.pret === v ? 'checked' : ''} ${d}>${v}</label>`).join('')}</div></div>
+    <input type="text" data-f="parceque" id="f-parceque" placeholder="Si non, parce que…" aria-label="Si non, parce que" value="${esc(f.parceque || '')}" ${d}>
+    ${lectureSeule ? (T.ficheFinie ? '<p class="envoye">✓ Fiche terminée</p>' : '') : `<button class="btn ${T.ficheFinie ? 'clair' : 'bleu'}" type="button" id="b-fiche">${T.ficheFinie ? '✓ Fiche terminée (modifier encore)' : 'Fiche terminée'}</button>`}
+  </div>`;
+}
+
+// ——— les actions ———
+function brancher(z, lecture) {
+  z.querySelectorAll('[data-mail]').forEach(b => b.onclick = () => { mailOuvert = b.dataset.mail; dessinerZone(lecture); });
+  z.querySelectorAll('[data-copie]').forEach(b => b.onclick = async () => { await copier(texteMail(b.dataset.copie)); toast('Copié. Collez-le où vous voulez avec Ctrl + V.'); });
+  z.querySelectorAll('[data-dans]').forEach(b => b.onclick = () => { ajouterDemande(texteMail(b.dataset.dans)); });
+  z.querySelectorAll('[data-inserer]').forEach(b => b.onclick = () => {
+    const m = messages()[+b.dataset.inserer]; brouillonLocal = m.content; garder('brouillon', m.content, 0);
+    ongletG = 'brouillon'; dessinerZone(lecture); toast('La réponse est dans votre texte. Relisez-la et corrigez-la avant d\'envoyer.');
+  });
+  z.querySelectorAll('[data-copiemsg]').forEach(b => b.onclick = async () => { await copier(messages()[+b.dataset.copiemsg].content); toast('Réponse copiée.'); });
+  z.querySelectorAll('[data-ajout]').forEach(b => b.onclick = () => { ajouterLigne(b.dataset.ajout); toast('Passage ajouté à la fiche de tri.'); });
+
+  const dem = $('demande');
+  if (dem) {
+    dem.value = memo('demande-' + ID + '-' + vueTache) || '';
+    dem.oninput = () => memo('demande-' + ID + '-' + vueTache, dem.value);
+    dem.onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); demander(); } };
+    $('b-modele').onclick = () => ajouterDemande(MODELE_DEMANDE, true);
+    $('b-demander').onclick = demander;
+  }
+  const br = $('brouillon');
+  if (br) {
+    br.oninput = () => { brouillonLocal = br.value; garder('brouillon', br.value); };
+    const cases = [...z.querySelectorAll('.relu-c')], maj = () => { $('b-envoyer').disabled = !br.value.trim() || cases.some(c => !c.checked); };
+    cases.forEach(c => c.onchange = () => { c.checked ? relus.add(+c.dataset.r) : relus.delete(+c.dataset.r); maj(); }); br.addEventListener('input', maj); maj();
+    $('b-envoyer').onclick = async () => {
+      const heure = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ');
+      await ecrireTache({ brouillon: br.value, envoi: { texte: br.value, heure } });
+      toast('Envoyé à Mme Leroy pour signature.');
+    };
+  }
+  const fiche = $('fiche');
+  if (fiche && !fiche.classList.contains('lecture-seule')) {
+    fiche.querySelectorAll('[data-champ]').forEach(el => el.addEventListener(el.type === 'radio' ? 'change' : 'input', () => majLigne(el)));
+    fiche.querySelectorAll('[data-f]').forEach(el => el.addEventListener(el.type === 'radio' ? 'change' : 'input', () => {
+      const f = { ...(T.fiche || {}), [el.dataset.f]: el.value }; T.fiche = f; garder('fiche', f, el.type === 'radio' ? 0 : 700);
+    }));
+    fiche.querySelectorAll('[data-retirer]').forEach(b => b.onclick = () => { const l = [...(T.fiche?.lignes || [])]; l.splice(+b.dataset.retirer, 1); T.fiche = { ...(T.fiche || {}), lignes: l }; garder('fiche', T.fiche, 0); dessinerZone(lecture); });
+    $('b-ligne').onclick = () => ajouterLigne('');
+    $('b-fiche').onclick = () => { const fin = !T.ficheFinie; ecrireTache({ fiche: T.fiche || {}, ficheFinie: fin }); toast(fin ? 'Fiche terminée.' : 'Vous pouvez modifier la fiche.'); };
+  }
+}
+
+function ajouterDemande(texte, remplacer) {
+  const d = $('demande'); if (!d) return;
+  d.value = remplacer || !d.value.trim() ? texte : d.value.trimEnd() + '\n\n' + texte;
+  memo('demande-' + ID + '-' + vueTache, d.value); d.focus(); toast('Ajouté à votre demande. Relisez-la avant d\'envoyer.');
+}
+
+function ajouterLigne(passage) {
+  const l = [...(T.fiche?.lignes || []), { passage, decision: '', pourquoi: '', verif: '' }].slice(0, 20);
+  T.fiche = { ...(T.fiche || {}), lignes: l }; garder('fiche', T.fiche, 0);
+  dessinerZone(false);
+}
+
+function majLigne(el) {
+  const i = +el.closest('.ligne-tri').dataset.i, l = [...(T.fiche?.lignes || [])];
+  l[i] = { ...l[i], [el.dataset.champ]: el.value }; T.fiche = { ...(T.fiche || {}), lignes: l };
+  garder('fiche', T.fiche, el.type === 'radio' ? 0 : 700);
+}
+
+function garder(champ, valeur, delai = 800) {
+  clearTimeout(ecrire[champ]);
+  ecrire[champ] = setTimeout(() => ecrireTache({ [champ]: valeur }), delai);
+}
+
+function ecrireTache(champs) {
+  return setDoc(doc(db, 'murs', SALLE, 'ateliers', ID, 'taches', String(vueTache)), { ...champs, maj: serverTimestamp() }, { merge: true })
+    .catch(e => { console.error(e); toast('Enregistrement impossible : vérifiez la connexion.'); });
+}
+
+// Envoyer la demande à l'IA, après le contrôle des données personnelles
+async function demander() {
+  const d = $('demande'), texte = d?.value.trim();
+  if (!texte || attente) return;
+  const perso = donneesPerso(texte);
+  if (perso.length) {
+    $('d-perso-texte').textContent = `Votre message contient ${perso.join(', ')}.`;
+    const choix = await new Promise(ok => { const dl = $('d-perso'); dl.showModal(); $('d-envoyer').onclick = () => { dl.close(); ok(true); }; $('d-corriger').onclick = () => { dl.close(); ok(false); }; dl.oncancel = () => ok(false); });
+    const alertes = [...(T.alertes || []), { quoi: perso, envoye: choix, qui: MOI, heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) }].slice(-30);
+    T.alertes = alertes; ecrireTache({ alertes });
+    if (!choix) { d.focus(); return; }
+  }
+  const tache = vueTache, avant = messages();
+  const avec = [...avant, { role: 'user', content: texte, ...(perso.length ? { perso } : {}) }].slice(-40);
+  T.messages = avec; attente = true; memo('demande-' + ID + '-' + tache, '');
+  await ecrireTache({ messages: avec }); afficher();
+  let rep;
+  try {
+    const r = await assistant({ salle: SALLE, binome: ID, messages: avec.slice(-16).map(({ role, content }) => ({ role, content })) });
+    rep = { role: 'assistant', content: r.data.reponse || '(réponse vide)' };
+  } catch (e) {
+    console.error(e);
+    rep = e.code === 'functions/resource-exhausted' ? { role: 'assistant', content: e.message, secours: true } : { role: 'assistant', content: SECOURS[tache], secours: true };
+  }
+  attente = false;
+  if (vueTache !== tache) return;
+  T.messages = [...avec, rep].slice(-40);
+  await ecrireTache({ messages: T.messages }); afficher();
+}
+</script>
+</body>
+</html>

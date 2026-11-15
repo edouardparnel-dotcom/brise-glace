@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quiz individuel</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* Quiz individuel de fin de séance : chacun seul, sur son poste ou son téléphone. Il vérifie les objectifs de chacun, pas du binôme. */
+.q{display:grid;gap:10px}
+.q h2{font-size:19px}
+.q h2 small{display:block;font-family:var(--f-texte);font-weight:400;color:var(--doux);font-size:14px;margin-top:4px}
+.opts{display:grid;gap:8px}
+.opts label{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--trait);border-radius:12px;padding:10px 12px;background:var(--carte);cursor:pointer}
+.opts input{margin-top:4px;flex:none;width:18px;height:18px;accent-color:var(--plan-2)}
+.opts label:has(input:checked){border-color:var(--plan-2);background:var(--bleu-clair)}
+.vf{display:flex;gap:8px}
+.vf label{flex:1;justify-content:center;font-weight:700}
+.citation{white-space:pre-wrap;background:#fcfbf8;border:1px solid var(--trait);border-left:4px solid var(--chantier);border-radius:10px;padding:10px 12px;font-size:15px}
+.corr .opts label.bon{border-color:var(--ok);background:var(--ok-clair)}
+.corr .opts label.faux{border-color:var(--alerte);background:var(--alerte-clair)}
+.explic{border-radius:10px;padding:8px 12px;font-size:15px;background:var(--papier)}
+.explic.ok{background:var(--ok-clair);color:#1f5a40}.explic.ko{background:var(--alerte-clair);color:#8a1d16}
+.score{text-align:center;display:grid;gap:6px}
+.score b{font-family:var(--f-titre);font-size:54px;color:var(--chantier);line-height:1}
+.etoiles{display:flex;gap:6px;flex-wrap:wrap}
+.etoiles label{border:2px solid var(--trait);border-radius:999px;padding:6px 14px;cursor:pointer;background:var(--carte)}
+.etoiles input{position:absolute;opacity:0;pointer-events:none}
+.etoiles label:has(input:checked){background:var(--plan);border-color:var(--plan);color:#fff}
+</style>
+</head>
+<body>
+<header class="haut"><div class="logo">B</div><div class="titre"><small>Fin de séance · chacun seul</small><b>Quiz individuel</b></div><nav><a href="ressources.html" target="_blank" rel="noopener">Ressources</a></nav></header>
+
+<main class="etroit" id="v-nom">
+  <div class="carte">
+    <h1 style="margin-bottom:8px">Ce que vous avez retenu</h1>
+    <p style="margin-top:0">9 questions, environ 5 minutes. Répondez <b>seul</b>, sans votre binôme : c'est ce que <b>vous</b> savez faire qui compte. La correction s'affiche à la fin.</p>
+    <form id="f-nom" style="display:grid;gap:12px" autocomplete="off">
+      <label class="champ" for="prenom">Votre prénom<input type="text" id="prenom" maxlength="40" required></label>
+      <button class="btn" type="submit">Commencer</button>
+    </form>
+  </div>
+</main>
+
+<form class="etroit cache" id="f-quiz" novalidate></form>
+
+<main class="etroit cache" id="v-resultat"></main>
+
+<script type="module">
+import { db, SALLE, $, esc, prenomPropre, memo, toast } from './commun.js';
+import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { QUESTIONS } from './donnees.js';
+
+const SUR = QUESTIONS.length;
+let PRENOM = '';
+
+const deja = memo('quiz');
+if (deja) resultat(deja.reponses, deja.prenom, true);
+$('prenom').value = memo('prenom') || '';
+
+$('f-nom').addEventListener('submit', e => {
+  e.preventDefault();
+  PRENOM = prenomPropre($('prenom').value); if (!PRENOM) return;
+  memo('prenom', PRENOM);
+  $('v-nom').classList.add('cache'); questionnaire();
+});
+
+function questionnaire() {
+  const f = $('f-quiz'); f.classList.remove('cache');
+  f.innerHTML = QUESTIONS.map((q, i) => `<fieldset class="carte q" id="c-${q.id}" style="border:1px solid var(--trait)"><legend class="cache">Question ${i + 1}</legend>
+      <h2>${i + 1}. ${esc(q.texte)}${q.sous ? `<small>${esc(q.sous)}</small>` : ''}</h2>
+      ${q.citation ? `<div class="citation">${esc(q.citation)}</div>` : ''}
+      <div class="opts ${q.type === 'vf' ? 'vf' : ''}">${options(q).map(([v, t]) => `<label><input type="${q.type === 'plusieurs' ? 'checkbox' : 'radio'}" name="${q.id}" value="${v}">${esc(t)}</label>`).join('')}</div>
+    </fieldset>`).join('')
+    + `<div class="carte q"><h2>Ma phrase à moi<small>En stage, avant de copier une réponse de l'IA, je…</small></h2><textarea id="phrase" rows="2" maxlength="200" aria-label="Ma phrase"></textarea></div>
+    <p class="erreur" id="e-quiz" role="alert"></p><button class="btn" type="submit">Voir ma correction</button>`;
+  f.onsubmit = envoyer;
+}
+const options = q => q.type === 'vf' ? [['vrai', 'Vrai'], ['faux', 'Faux']] : q.options;
+
+async function envoyer(e) {
+  e.preventDefault();
+  const r = {};
+  for (const q of QUESTIONS) {
+    const vals = [...document.querySelectorAll(`[name="${q.id}"]:checked`)].map(x => x.value);
+    if (!vals.length) { $('e-quiz').textContent = `Il manque la réponse à la question ${QUESTIONS.indexOf(q) + 1}.`; $('c-' + q.id).scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    r[q.id] = q.type === 'plusieurs' ? vals : vals[0];
+  }
+  r.phrase = $('phrase').value.trim();
+  const score = QUESTIONS.filter(q => juste(q, r[q.id])).length;
+  e.submitter.disabled = true;
+  try { await addDoc(collection(db, 'murs', SALLE, 'quiz'), { prenom: PRENOM, reponses: r, score, sur: SUR, le: serverTimestamp() }); }
+  catch (err) { console.error(err); toast('Votre résultat n\'a pas pu être transmis au formateur, mais votre correction s\'affiche.'); }
+  memo('quiz', { prenom: PRENOM, reponses: r });
+  $('f-quiz').classList.add('cache');
+  resultat(r, PRENOM, false);
+}
+
+function juste(q, rep) {
+  if (q.type === 'vf') return rep === q.bon;
+  if (q.type === 'un') return q.options.find(o => o[0] === rep)?.[2] === true;
+  const bons = q.options.filter(o => o[2]).map(o => o[0]);
+  return rep.length === bons.length && bons.every(b => rep.includes(b));
+}
+
+function resultat(r, prenom, revu) {
+  $('v-nom').classList.add('cache');
+  const score = QUESTIONS.filter(q => juste(q, r[q.id])).length, v = $('v-resultat');
+  v.classList.remove('cache');
+  v.innerHTML = `<div class="carte score"><span>${esc(prenom)}, votre résultat</span><b>${score} / ${SUR}</b>
+      <span>${score === SUR ? 'Parfait : vous savez demander, contrôler et protéger.' : score >= 7 ? 'Très bien. Relisez les corrections en rouge.' : 'Relisez les corrections : on en reparle ensemble au bilan.'}</span></div>`
+    + QUESTIONS.map((q, i) => {
+      const ok = juste(q, r[q.id]), rep = [].concat(r[q.id]);
+      return `<div class="carte q corr"><h2>${i + 1}. ${esc(q.texte)}</h2>${q.citation ? `<div class="citation">${esc(q.citation)}</div>` : ''}
+        <div class="opts ${q.type === 'vf' ? 'vf' : ''}">${options(q).map(([val, t, bon]) => {
+          const estBon = q.type === 'vf' ? val === q.bon : bon, coche = rep.includes(val);
+          return `<label class="${estBon ? 'bon' : coche ? 'faux' : ''}"><input type="${q.type === 'plusieurs' ? 'checkbox' : 'radio'}" disabled ${coche ? 'checked' : ''}>${esc(t)}</label>`;
+        }).join('')}</div><p class="explic ${ok ? 'ok' : 'ko'}">${ok ? '✓ ' : '✗ '}${esc(q.pourquoi)}</p></div>`;
+    }).join('')
+    + (r.phrase ? `<div class="carte"><b>Votre phrase :</b> En stage, avant de copier une réponse de l'IA, je ${esc(r.phrase.replace(/^je\s+/i, ''))}</div>` : '')
+    + avis();
+  branchAvis();
+}
+
+// Votre avis : anonyme, séparé du quiz (remplace le questionnaire papier si les postes sont là)
+function avis() {
+  if (memo('avis')) return `<div class="carte"><b>Merci pour votre avis.</b></div>`;
+  const choix = (n, t) => `<div class="etoiles">${['Oui', 'Un peu', 'Non'].map(v => `<label><input type="radio" name="${n}" value="${v}">${v}</label>`).join('')}</div>`;
+  return `<form class="carte" id="f-avis" style="display:grid;gap:12px"><h2 style="font-size:22px">Votre avis sur la séance <small style="font-family:var(--f-texte);font-weight:400;color:var(--doux);font-size:14px">(sans nom)</small></h2>
+    <b>Cette séance vous sera-t-elle utile en stage ?</b>${choix('utile')}
+    <b>Les explications étaient-elles claires ?</b>${choix('clair')}
+    <label class="champ">Que changeriez-vous ?<textarea id="changer" rows="2" maxlength="500"></textarea></label>
+    <button class="btn bleu" type="submit">Envoyer mon avis</button></form>`;
+}
+function branchAvis() {
+  const f = $('f-avis'); if (!f) return;
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const utile = f.utile.value, clair = f.clair.value;
+    if (!utile || !clair) return toast('Répondez aux deux premières questions.');
+    e.submitter.disabled = true;
+    try { await addDoc(collection(db, 'murs', SALLE, 'avis'), { utile, clair, changer: $('changer').value.trim(), le: serverTimestamp() }); memo('avis', true); f.outerHTML = '<div class="carte"><b>Merci pour votre avis.</b></div>'; }
+    catch (err) { console.error(err); e.submitter.disabled = false; toast('Envoi impossible, réessayez.'); }
+  };
+}
+</script>
+</body>
+</html>

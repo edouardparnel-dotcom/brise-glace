@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ressources de la séance</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* Les documents de la séance à télécharger : ceux de l'entreprise inventée, les fiches, pour aller plus loin. */
+.page{max-width:900px;margin:0 auto;padding:24px 16px 48px;display:grid;gap:26px}
+.page>section{display:grid;gap:12px}
+.page h1{font-size:34px}
+.page h2{font-size:22px;color:var(--plan)}
+.intro{color:var(--doux);margin:6px 0 0}
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.doc{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start;background:var(--carte);border:1px solid var(--trait);border-radius:14px;padding:14px 16px;text-decoration:none;color:inherit}
+.doc:hover{border-color:var(--plan-2);box-shadow:0 4px 14px rgba(20,48,79,.08)}
+.doc .ico{grid-row:span 2;width:42px;height:52px;border-radius:6px;background:var(--plan);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;letter-spacing:.04em}
+.doc .ico.o{background:var(--chantier)}
+.doc .ico.l{background:var(--ok)}
+.doc b{font-size:17px}
+.doc span{color:var(--doux);font-size:14px}
+.rappel{background:var(--plan);color:#fff;border-radius:16px;padding:18px 20px;display:grid;gap:6px}
+.rappel b{font-family:var(--f-titre);font-size:24px}
+</style>
+</head>
+<body>
+<header class="haut"><div class="logo">B</div><div class="titre"><small>Belle Alliance · 17 novembre 2026</small><b>L'IA dans les métiers de l'administratif</b></div>
+  <nav><a id="l-atelier" href="atelier.html">Atelier</a><a id="l-quiz" href="quiz.html">Quiz</a></nav></header>
+<main class="page">
+  <div><h1>Les ressources de la séance</h1><p class="intro">Tout se télécharge en PDF, à garder pour votre stage. Batifer est une entreprise inventée : ses noms, adresses et numéros sont faux.</p></div>
+
+  <div class="rappel"><b>L'IA écrit le brouillon, c'est moi qui signe.</b><span>Une réponse sûre d'elle n'est pas une réponse juste. Ce que vous ne mettriez pas sur une carte postale, vous ne le mettez pas dans l'IA.</span></div>
+
+  <section><h2>Pour bien utiliser l'IA</h2><div class="docs">
+    <a class="doc" href="docs/fiche-memo.pdf" download><span class="ico">PDF</span><b>La fiche mémo</b><span>La demande en 4 éléments, les 4 règles d'or, votre phrase à vous. 1 page.</span></a>
+    <a class="doc" href="docs/fiche-de-tri.pdf" download><span class="ico">PDF</span><b>La fiche de tri</b><span>Je garde, je corrige, je supprime : pourquoi, et comment je l'ai vérifié. À réutiliser en stage.</span></a>
+    <a class="doc" href="docs/diapositives.pdf" download><span class="ico">PDF</span><b>Les diapositives</b><span>Ce qu'est l'IA, ce qu'elle fait bien et mal, les règles d'or. 6 pages.</span></a>
+  </div></section>
+
+  <section><h2>Les documents de l'entreprise Batifer</h2><div class="docs">
+    <a class="doc" href="docs/dossier-batifer.pdf" download><span class="ico o">PDF</span><b>Le dossier complet</b><span>Le mot de Mme Leroy, le courriel de M. Durand, la facture, la relance, les notes de réunion. 5 pages.</span></a>
+    <a class="doc" id="l-atelier2" href="atelier.html"><span class="ico o">EN<br>LIGNE</span><b>La boîte mail de Batifer</b><span>Les mêmes documents dans l'atelier, avec l'assistant IA : rien à recopier.</span></a>
+  </div></section>
+
+  <section><h2>La séance</h2><div class="docs">
+    <a class="doc" href="docs/fiche-pedagogique.pdf" download><span class="ico">PDF</span><b>La fiche pédagogique</b><span>Public, objectifs, déroulé, évaluation, règles d'or. 1 page.</span></a>
+  </div></section>
+
+  <section><h2>Pour aller plus loin</h2><div class="docs">
+    <a class="doc" href="https://www.cnil.fr/fr/intelligence-artificielle" target="_blank" rel="noopener"><span class="ico l">SITE</span><b>La CNIL et l'IA</b><span>Les données personnelles et l'intelligence artificielle, par l'autorité officielle.</span></a>
+    <a class="doc" href="https://www.service-public.fr" target="_blank" rel="noopener"><span class="ico l">SITE</span><b>Service-public.fr</b><span>Pour vérifier un délai, une règle, une démarche : la source officielle.</span></a>
+    <a class="doc" href="https://chat.mistral.ai" target="_blank" rel="noopener"><span class="ico l">SITE</span><b>Le Chat de Mistral</b><span>L'assistant IA français utilisé pendant la séance. Demandez d'abord à votre entreprise si vous pouvez l'utiliser.</span></a>
+  </div></section>
+</main>
+<script type="module">
+import { suffixe } from './commun.js';
+for (const id of ['l-atelier', 'l-atelier2']) document.getElementById(id).href = 'atelier.html' + suffixe;
+document.getElementById('l-quiz').href = 'quiz.html' + suffixe;
+</script>
+</body>
+</html>

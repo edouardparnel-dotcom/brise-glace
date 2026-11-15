@@ -135,6 +135,7 @@ td img{width:48px;height:48px;object-fit:cover;border-radius:8px}
     <img id="merci-img" alt="">
     <h2 id="merci-titre">Bienvenue !</h2>
     <p>Votre fiche est sur le mur. Regardez l'écran de la salle.</p>
+    <p class="consigne" style="text-align:left">Tout à l'heure, sur votre poste, vous travaillerez dans <b>l'atelier Batifer</b> : <span id="lien-atelier"></span></p>
   </div>
 </main>
 
@@ -182,7 +183,7 @@ const vue = location.hash.replace('#', '');
 
 addEventListener('hashchange', () => location.reload());   // #ecran, #formateur : chaque vue se charge à part
 if (vue === 'ecran') ecran();
-else if (vue === 'formateur') formateur();
+else if (vue === 'formateur') location.replace('formateur.html' + location.search);   // la vue formateur complète (ateliers, quiz, avis) a sa page
 else telephone();
 
 function telephone() {
@@ -206,6 +207,8 @@ function telephone() {
 function merci(f) {
   $('f-fiche').classList.add('cache'); $('merci').classList.remove('cache');
   $('merci-img').src = img(f.image); $('merci-img').alt = ALT[f.image]; $('merci-titre').textContent = `Bienvenue, ${f.prenom} !`;
+  $('lien-atelier').textContent = (location.host + location.pathname).replace(/index\.html$/, '') + 'atelier.html';
+  try { localStorage.setItem('prenom-' + SALLE, JSON.stringify(f.prenom)); } catch {}
 }
 
 function ecran() {
