@@ -123,15 +123,15 @@ function rendre() {
 
 // ——— ma séance : le conducteur (horaires, ce qu'on projette à chaque moment), sans clé USB ———
 const PHASES = [   // séance d'une heure (Parnel 15/11) : la présentation et un peu de pédagogie, sans surcharger
-  [0, 5, 'Accueil et brise-glace', "Présente-toi en 1 minute, annonce l'objectif. Le mur au vidéoprojecteur : chacun scanne le QR code, choisit une image et un mot.",
+  [0, 10, 'Accueil et présentation', "Présente-toi en 1 minute, annonce l'objectif. Le mur au vidéoprojecteur : chacun scanne le QR code et remplit sa fiche (image, mot), puis se présente à l'oral en une phrase.",
     [['index.html#ecran', 'Mur et QR code'], ['diapos.html#1', 'Diapositive de titre'], ['@stagiaires', 'Stagiaires']]],
-  [5, 17, 'Apport démonstratif', "Diapositives 2 à 5 et trois démonstrations seulement : le courriel trop sec, Batifer inconnue (l'IA invente), la demande vague puis en 4 éléments.",
+  [10, 22, 'Apport démonstratif', "Diapositives 2 à 5 et trois démonstrations seulement : le courriel trop sec, Batifer inconnue (l'IA invente), la demande vague puis en 4 éléments.",
     [['diapos.html#2', 'Diapositives'], ['demo.html', 'Démonstration'], ['https://chat.mistral.ai', 'Le Chat (secours)']]],
-  [17, 40, 'Mise en situation Batifer', "Diapositive 6, puis l'adresse de l'atelier en grand. Chacun seul, sur son poste : il tape son prénom. Deux tâches : M. Durand, puis la relance. Tu passes aux postes. Passe d'abord voir les alertes rouges.",
+  [22, 40, 'Mise en situation Batifer', "Diapositive 6, puis l'adresse de l'atelier en grand. Chacun seul, sur son poste : il tape son prénom. Deux tâches : M. Durand, puis la relance. Tu passes aux postes. Passe d'abord voir les alertes rouges.",
     [['diapos.html#6', 'Diapositive « À vous »'], ['!atelier.html', 'Adresse de l\'atelier en grand'], ['@ateliers', 'Ateliers en direct']]],
   [40, 50, 'Retour et analyse', "Projette 2 textes anonymes : une bonne pratique, une erreur utile. Tu joues Mme Leroy : « Qu'avez-vous mis dans l'IA ? Corrigé ? Comment l'avez-vous vérifié ? »",
     [['@projeter', 'Projeter les textes envoyés']]],
-  [50, 60, 'Bilan individuel', "Diapositive 7 et l'adresse du quiz : 6 questions, chacun seul, puis sa phrase et son avis. Termine sur les mots du brise-glace : « Qui changerait son mot ? »",
+  [50, 60, 'Bilan individuel', "Diapositive 7 et l'adresse du quiz : 6 questions, chacun seul, puis sa phrase et son avis. Termine sur les mots de l'accueil : « Qui changerait son mot ? »",
     [['diapos.html#7', 'Diapositive du bilan'], ['!quiz.html', 'Adresse du quiz en grand'], ['@quiz', 'Résultats du quiz'], ['index.html#ecran', 'Le mur et ses mots']]],
 ];
 const cleDebut = 'debut-seance-' + SALLE;
@@ -175,7 +175,7 @@ let brouillonBinomes = null;
 function stagiaires() {
   const valides = conf.binomes || [], liste = brouillonBinomes || (valides.length ? valides : propositions());
   const prenoms = entrees.map(f => f.prenom), sel = (v, id) => `<select id="${id}">${['', ...prenoms].map(p => `<option ${p === v ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>`;
-  return `<section><h2>Les stagiaires</h2><p class="note">Leur fiche du brise-glace et leur usage de l'IA (eux seuls ne le voient pas au mur).</p></section>
+  return `<section><h2>Les stagiaires</h2><p class="note">Leur fiche de présentation et leur usage de l'IA (eux seuls ne le voient pas au mur).</p></section>
     <div class="tableau"><table><thead><tr><th>Image</th><th>Prénom et nom</th><th>Parcours</th><th>Mot</th><th>IA</th></tr></thead><tbody>
     ${entrees.map(f => `<tr><td><img src="images/${f.image}-${IMAGES[f.image]}.jpg" alt=""></td><td><b>${esc(f.prenom)} ${esc(f.nom)}</b></td><td>${esc(f.parcours) || '—'}</td><td>${esc(f.mot)}</td><td>${f.ia ? `<span class="pastille p-${esc(f.ia)}">${esc(f.ia)}</span>` : '—'}</td></tr>`).join('') || '<tr><td colspan="5">Personne pour l\'instant.</td></tr>'}
     </tbody></table></div>
@@ -266,7 +266,7 @@ function vueAvis() {
 function documents() {
   const l = (href, t, s, ext) => `<a href="${esc(href)}" ${ext ? 'target="_blank" rel="noopener"' : 'download'}><b>${t}</b><span>${s}</span></a>`;
   return `<h2>Les pages de la séance</h2><div class="liens">
-    ${l('index.html' + suffixe + '#ecran', 'Mur projeté', 'Au vidéoprojecteur, pour le brise-glace (QR code)', 1)}
+    ${l('index.html' + suffixe + '#ecran', 'Mur projeté', 'Au vidéoprojecteur, pour l\'accueil et la présentation (QR code)', 1)}
     ${l('atelier.html' + suffixe, 'Atelier Batifer', 'Sur chaque poste, après l\'apport', 1)}
     ${l('quiz.html' + suffixe, 'Quiz individuel', 'À la fin, chacun seul', 1)}
     ${l('ressources.html' + suffixe, 'Ressources', 'Les PDF pour les stagiaires', 1)}
