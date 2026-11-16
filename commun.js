@@ -69,10 +69,19 @@ export function boutonMain(prenomDe, page) {
 #main-levee .demande input{font:inherit;padding:8px 10px;border:2px solid #ccd;border-radius:8px}
 #main-levee .demande button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:8px 12px;background:#18355D;color:#fff;cursor:pointer}
 #main-levee .baisser{font:inherit;font-size:15px;border:0;background:#fff;color:#18355D;border-radius:999px;padding:6px 12px;cursor:pointer;box-shadow:0 4px 12px -6px rgba(0,0,0,.4)}
-@media print{#main-levee{display:none}}`;
+@media print{#main-levee{display:none}}
+/* dans la barre du haut : ne cache plus rien */
+.haut nav #main-levee{position:relative;right:auto;bottom:auto;left:auto;flex-direction:row;align-items:center;gap:6px}
+.haut nav #main-levee button.main{font-size:15px;padding:5px 14px;background:#E8692C;box-shadow:none;gap:6px}
+.haut nav #main-levee button.main span{font-size:19px}
+.haut nav #main-levee.levee button.main{background:#fff;color:#E8692C;animation:none}
+.haut nav #main-levee .baisser{font-size:13px;padding:5px 10px;box-shadow:none}
+.haut nav #main-levee .demande{position:absolute;top:calc(100% + 8px);right:0;z-index:70;width:240px}`;
   document.head.append(st);
-  const z = document.createElement('div'); z.id = 'main-levee'; document.body.append(z);
-  if (page === 'atelier') z.style.cssText = 'right:auto;left:18px;align-items:flex-start';   // à droite : la zone de saisie de l'assistant
+  // dans la barre du haut quand la page en a une (rien n'est caché) ; sinon en bas, avec une marge pour ne rien couvrir
+  const z = document.createElement('div'); z.id = 'main-levee';
+  const nav = document.querySelector('header.haut nav');
+  if (nav) nav.prepend(z); else { document.body.append(z); document.body.style.paddingBottom = '90px'; }
   let qui = '', arret = null, levee = false;
   const dessiner = (demande = false) => {
     z.classList.toggle('levee', levee);
