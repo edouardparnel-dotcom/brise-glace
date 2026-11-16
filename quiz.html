@@ -112,7 +112,7 @@ function resultat(r, prenom, revu) {
   const score = QUESTIONS.filter(q => juste(q, r[q.id])).length, v = $('v-resultat');
   v.classList.remove('cache');
   v.innerHTML = `<div class="carte score"><span>${esc(prenom)}, votre résultat</span><b>${score} / ${SUR}</b>
-      <span>${score === SUR ? 'Parfait : vous savez demander, contrôler et protéger.' : score >= 7 ? 'Très bien. Relisez les corrections en rouge.' : 'Relisez les corrections : on en reparle ensemble au bilan.'}</span></div>`
+      <span>${score === SUR ? 'Parfait : vous savez demander, contrôler et protéger.' : score >= SUR - 1 ? 'Très bien. Relisez les corrections en rouge.' : 'Relisez les corrections : on en reparle ensemble au bilan.'}</span></div>`
     + QUESTIONS.map((q, i) => {
       const ok = juste(q, r[q.id]), rep = [].concat(r[q.id]);
       return `<div class="carte q corr"><h2>${i + 1}. ${esc(q.texte)}</h2>${q.citation ? `<div class="citation">${esc(q.citation)}</div>` : ''}

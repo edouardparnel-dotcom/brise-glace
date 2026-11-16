@@ -243,14 +243,16 @@ function juste(q, rep) {
 }
 function vueQuiz() {
   if (!quiz.length) return `<h2>Quiz individuel</h2><p class="note">Personne n'a encore répondu (${esc(BASE)}quiz.html${esc(suffixe)}).</p>`;
-  const moy = quiz.reduce((s, r) => s + r.score, 0) / quiz.length;
+  // le score est recalculé sur les questions actuelles (6) : les réponses d'avant (quiz de 9 questions) restent comparables
+  const note = r => QUESTIONS.filter(q => juste(q, r.reponses?.[q.id])).length, SUR = QUESTIONS.length;
+  const moy = quiz.reduce((s, r) => s + note(r), 0) / quiz.length;
   return `<h2>Quiz individuel</h2><div class="stats"><div class="carte"><span>Réponses</span><b>${quiz.length}</b></div><div class="carte"><span>Score moyen</span><b>${moy.toFixed(1).replace('.', ',')} / ${QUESTIONS.length}</b></div></div>
     <h2 style="font-size:20px">Question par question</h2><div class="stats">${QUESTIONS.map((q, i) => {
       const n = quiz.filter(r => juste(q, r.reponses?.[q.id])).length, p = Math.round(100 * n / quiz.length);
       return `<div class="carte"><span>${i + 1}. ${esc(q.court)}</span><strong>${n} / ${quiz.length} juste${n > 1 ? 's' : ''}</strong><div class="barre"><i style="width:${p}%;${p < 60 ? 'background:var(--alerte)' : ''}"></i></div></div>`;
     }).join('')}</div>
     <div class="tableau"><table><thead><tr><th>Prénom</th><th>Score</th>${QUESTIONS.map((q, i) => `<th title="${esc(q.court)}">${i + 1}</th>`).join('')}<th>Sa phrase</th></tr></thead><tbody>
-    ${quiz.map(r => `<tr><td><b>${esc(r.prenom)}</b></td><td><span class="pastille ${r.score >= 7 ? 'p-ok' : 'p-ko'}">${r.score} / ${r.sur}</span></td>${QUESTIONS.map(q => `<td>${juste(q, r.reponses?.[q.id]) ? '✓' : '<span style="color:var(--alerte);font-weight:700">✗</span>'}</td>`).join('')}<td>${esc(r.reponses?.phrase || '')}</td></tr>`).join('')}
+    ${quiz.map(r => `<tr><td><b>${esc(r.prenom)}</b></td><td><span class="pastille ${note(r) >= SUR - 1 ? 'p-ok' : 'p-ko'}">${note(r)} / ${SUR}</span></td>${QUESTIONS.map(q => `<td>${juste(q, r.reponses?.[q.id]) ? '✓' : '<span style="color:var(--alerte);font-weight:700">✗</span>'}</td>`).join('')}<td>${esc(r.reponses?.phrase || '')}</td></tr>`).join('')}
     </tbody></table></div>`;
 }
 
