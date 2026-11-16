@@ -92,6 +92,16 @@ legend span{display:block;font-weight:400;color:var(--doux);font-size:14px}
 .vide{opacity:.75;font-size:20px;border:2px dashed rgba(255,255,255,.3);border-radius:16px;padding:40px;text-align:center}
 @keyframes arrive{from{transform:translateY(16px) scale(.96);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.fiche{animation:none}}
+.fiche{cursor:pointer;transition:transform .15s}.fiche:hover{transform:scale(1.03)}
+/* un stagiaire en grand, le temps de sa présentation à l'oral */
+.grand-fiche{position:fixed;inset:0;z-index:50;background:var(--plan);color:#fff;display:grid;grid-template-columns:minmax(0,46vh) 1fr;gap:6vw;align-items:center;padding:6vh 7vw}
+.grand-fiche img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:28px;box-shadow:0 30px 60px -20px rgba(0,0,0,.6)}
+.grand-fiche .qui{font-family:var(--f-titre);font-size:clamp(48px,9vw,130px);font-weight:800;line-height:1;margin:0}
+.grand-fiche .mot{display:inline-block;margin-top:3vh;font-size:clamp(28px,4.5vw,64px);font-weight:700;background:var(--chantier);color:#fff;border-radius:18px;padding:.15em .5em}
+.grand-fiche .parcours{font-size:clamp(22px,2.6vw,38px);line-height:1.35;margin-top:4vh;max-width:30ch;opacity:.95}
+.grand-fiche .commandes{position:absolute;right:28px;bottom:24px;display:flex;gap:12px}
+.grand-fiche .commandes button{font:inherit;font-size:20px;border-radius:12px;padding:10px 18px;border:2px solid rgba(255,255,255,.6);background:transparent;color:#fff;cursor:pointer}
+@media (max-width:820px){.grand-fiche{grid-template-columns:1fr;text-align:center}.grand-fiche img{max-width:60vw;justify-self:center}}
 @media (max-width:820px){.ecran{grid-template-columns:1fr;padding:20px 16px}.panneau{position:static}}
 
 /* ——— vue formateur ——— */
@@ -211,7 +221,27 @@ function merci(f) {
   try { localStorage.setItem('prenom-' + SALLE, JSON.stringify(f.prenom)); } catch {}
 }
 
+// Un clic sur une fiche du mur : le stagiaire en grand pendant qu'il se présente à l'oral (← → pour passer au suivant, Échap pour fermer)
+let fiches = [], enGrand = -1;
+function montrer(k) {
+  document.querySelector('.grand-fiche')?.remove();
+  if (k < 0 || k >= fiches.length) { enGrand = -1; return; }
+  enGrand = k; const f = fiches[k], g = document.createElement('div'); g.className = 'grand-fiche';
+  g.innerHTML = `<img src="${img(f.image)}" alt="${ALT[f.image] || ''}"><div><p class="qui">${esc(f.prenom)}</p><span class="mot">${esc(f.mot)}</span>
+    ${f.parcours ? `<p class="parcours">${esc(f.parcours)}</p>` : ''}</div>
+    <div class="commandes"><button type="button" data-g="-1">← Précédent</button><button type="button" data-g="1">Suivant →</button><button type="button" data-g="0">Fermer</button></div>`;
+  g.onclick = e => { const b = e.target.closest('[data-g]'); if (!b) return; const d = +b.dataset.g; d ? montrer(Math.min(Math.max(enGrand + d, 0), fiches.length - 1)) : montrer(-1); };
+  document.body.append(g);
+}
+addEventListener('keydown', e => {
+  if (enGrand < 0) return;
+  if (e.key === 'Escape') montrer(-1);
+  else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); montrer(Math.min(enGrand + 1, fiches.length - 1)); }
+  else if (e.key === 'ArrowLeft') montrer(Math.max(enGrand - 1, 0));
+});
+
 function ecran() {
+  $('mur').addEventListener('click', e => { const c = e.target.closest('.fiche[data-k]'); if (c) montrer(+c.dataset.k); });
   $('vue-tel').classList.add('cache'); $('vue-ecran').classList.remove('cache');
   const lien = location.origin + location.pathname + (SALLE !== 'belle-alliance' ? '?salle=' + SALLE : '');
   const qr = qrcode(0, 'M'); qr.addData(lien); qr.make(); $('qr').src = qr.createDataURL(8, 2); $('lien').textContent = lien.replace(/^https:\/\//, '');
@@ -220,7 +250,8 @@ function ecran() {
   onSnapshot(query(entrees, orderBy('le')), s => {
     const l = s.docs.map(d => d.data());
     $('nb').textContent = l.length; $('pluriel').textContent = l.length > 1 ? 's' : '';
-    $('mur').innerHTML = l.length ? l.map(f => `<article class="fiche"><img src="${img(f.image)}" alt="${ALT[f.image] || ''}"><div><b>${esc(f.prenom)}</b><i>${esc(f.mot)}</i></div></article>`).join('')
+    fiches = l;
+    $('mur').innerHTML = l.length ? l.map((f, k) => `<article class="fiche" data-k="${k}" title="Cliquez : en grand pour sa présentation"><img src="${img(f.image)}" alt="${ALT[f.image] || ''}"><div><b>${esc(f.prenom)}</b><i>${esc(f.mot)}</i></div></article>`).join('')
       : '<p class="vide">Scannez le QR code : votre fiche apparaîtra ici.</p>';
     // nuage de mots : plus un mot revient, plus il est grand
     const comptes = {}; l.forEach(f => { const m = f.mot.toLowerCase(); comptes[m] = (comptes[m] || 0) + 1; });
