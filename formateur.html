@@ -24,6 +24,7 @@ th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--doux
 td img{width:44px;height:44px;object-fit:cover;border-radius:8px}
 .pastille{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700;white-space:nowrap}
 .p-jamais{background:var(--ok-clair);color:var(--ok)}.p-parfois{background:var(--orange-clair);color:var(--chantier-fonce)}.p-souvent{background:var(--bleu-clair);color:var(--plan-2)}
+.corr-liste{list-style:none;padding:0;margin:6px 0 10px;display:grid;gap:4px;font-size:15px}.corr-liste li{display:flex;gap:8px;align-items:baseline}.corr-liste .d{color:var(--doux)}
 .p-ok{background:var(--ok-clair);color:var(--ok)}.p-ko{background:var(--alerte-clair);color:var(--alerte)}.p-neutre{background:var(--papier);color:var(--doux)}
 .binomes{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .binomes .carte{display:grid;gap:8px;padding:12px 14px}
@@ -88,7 +89,8 @@ details summary{cursor:pointer;color:var(--plan-2);font-weight:700}
 <main class="vue" id="vue"></main>
 
 <script type="module">
-import { db, SALLE, suffixe, $, esc, copier, toast } from './commun.js';
+import { app, db, SALLE, suffixe, $, esc, copier, toast } from './commun.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js';
 import { TACHES, TACHES_SEANCE, QUESTIONS } from './donnees.js';
 import { collection, doc, onSnapshot, setDoc, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
@@ -107,7 +109,7 @@ onSnapshot(collection(db, 'murs', SALLE, 'ateliers'), s => {
   s.docs.forEach(d => {
     ateliers[d.id] = d.data();
     if (!ecoutes[d.id]) ecoutes[d.id] = onSnapshot(collection(db, 'murs', SALLE, 'ateliers', d.id, 'taches'), t => {
-      taches[d.id] = {}; t.docs.forEach(x => taches[d.id][x.id] = x.data()); rendre();
+      taches[d.id] = {}; t.docs.forEach(x => taches[d.id][x.id] = x.data()); rendre(); corrigerBientot();
     });
   });
   rendre();
@@ -212,6 +214,25 @@ function etatTache(id, n) {
   return { t, ms, dem, envoyees, evitees };
 }
 const pilote = (a, n) => a.b === 'Seul(e)' ? a.a : (n % 2 === 1 ? a.premier : (a.premier === a.a ? a.b : a.a));
+// ✓ Correction : la grille est côté serveur (fonction correctionSeance), jamais dans ce dépôt public
+const corrigerFn = httpsCallable(getFunctions(app, 'europe-west9'), 'correctionSeance', { timeout: 30000 });
+let corrections = {}, minuteurCorr = null, signatureCorr = '';
+function corrigerBientot() {
+  const sig = Object.entries(taches).flatMap(([id, t]) => Object.entries(t).map(([n, v]) => id + n + (v.envoi?.heure || '') + (v.envoi?.texte?.length || ''))).join('|');
+  if (sig === signatureCorr) return;
+  signatureCorr = sig; clearTimeout(minuteurCorr);
+  minuteurCorr = setTimeout(async () => { try { corrections = (await corrigerFn({ salle: SALLE })).data || {}; rendre(); } catch (e) { console.error(e); } }, 2500);
+}
+const symb = ok => ok === true ? '✓' : ok === false ? '✗' : '?';
+function pastilleCorr(id, n) {
+  const c = corrections[id]?.[n]; if (!c) return '';
+  return `<span class="pastille ${c.bons === c.sur ? 'p-ok' : c.bons >= c.sur - 2 ? 'p-neutre' : 'p-ko'}" title="Correction automatique">correction ${c.bons}/${c.sur}</span>`;
+}
+function listeCorr(id, n) {
+  const c = corrections[id]?.[n]; if (!c) return '';
+  return `<p class="note" style="margin:8px 0 0"><b>Correction automatique : ${c.bons}/${c.sur}</b> (à confirmer en relisant le texte)</p><ul class="corr-liste">${c.points.map(p => `<li><span class="pastille ${p.ok === true ? 'p-ok' : p.ok === false ? 'p-ko' : 'p-neutre'}">${symb(p.ok)}</span><span><b>${esc(p.titre)}</b> <span class="d">· ${esc(p.detail)}</span></span></li>`).join('')}</ul>`;
+}
+
 function vueAteliers() {
   const ids = Object.keys(ateliers).sort();
   if (!ids.length) return `<h2>Ateliers en direct</h2><p class="note">Personne n'est encore entré dans l'atelier (${esc(BASE)}atelier.html${esc(suffixe)}).</p>`;
@@ -227,7 +248,7 @@ function vueAteliers() {
         return `<div class="t-ligne"><b>${n}. ${esc(TACHES[n].court)}</b><div class="etats">
           <span class="pastille ${dem ? 'p-ok' : 'p-neutre'}">${dem} demande${dem > 1 ? 's' : ''}</span>
           ${evitees.length ? `<span class="pastille p-ok" title="Averti, a corrigé son message">${evitees.length} donnée${evitees.length > 1 ? 's' : ''} retirée${evitees.length > 1 ? 's' : ''}</span>` : ''}
-          <span class="pastille ${t.envoi ? 'p-ok' : 'p-neutre'}">${t.envoi ? '✓ envoyé' : 'pas envoyé'}</span>
+          <span class="pastille ${t.envoi ? 'p-ok' : 'p-neutre'}">${t.envoi ? '✓ envoyé' : 'pas envoyé'}</span>${pastilleCorr(id, n)}
           ${lignes ? `<span class="pastille ${t.ficheFinie ? 'p-ok' : 'p-neutre'}">fiche ${lignes} passage${lignes > 1 ? 's' : ''}${t.ficheFinie ? ' ✓' : ''}</span>` : ''}</div></div>`;
       }).join('')}
       <details data-k="${id}"><summary>Voir leur travail</summary><div class="detail">${TACHES_SEANCE.map(n => detailTache(id, n)).join('')}</div></details></div>`;
@@ -239,7 +260,7 @@ function detailTache(id, n) {
   const f = t.fiche || {};
   return `<b>Tâche ${n} · ${esc(TACHES[n].titre)}</b>
     ${ms.map(m => `<div class="msg ${m.role}">${esc(m.content)}${m.perso?.length ? `\n⚠ ${esc(m.perso.join(', '))}` : ''}</div>`).join('')}
-    ${t.envoi ? `<div class="envoi"><b>Envoyé à Mme Leroy (${esc(t.envoi.heure || '')}) :</b>\n${esc(t.envoi.texte)}</div>` : ''}
+    ${t.envoi ? `<div class="envoi"><b>Envoyé à Mme Leroy (${esc(t.envoi.heure || '')}) :</b>\n${esc(t.envoi.texte)}</div>${listeCorr(id, n)}` : ''}
     ${(f.lignes || []).length ? `<div class="tableau"><table><tr><th>Passage</th><th>Décision</th><th>Pourquoi</th><th>Vérifié</th></tr>${f.lignes.map(l => `<tr><td>${esc(l.passage)}</td><td>${esc(l.decision)}</td><td>${esc(l.pourquoi)}</td><td>${esc(l.verif)}</td></tr>`).join('')}</table></div>` : ''}
     ${f.anonyme || f.pret ? `<p class="note">Données retirées : ${esc(f.anonyme || '—')} · prêt à signer : ${esc(f.pret || '—')}${f.parceque ? ' (' + esc(f.parceque) + ')' : ''}${f.ailleurs ? ' · vérifié ailleurs : ' + esc(f.ailleurs) : ''}</p>` : ''}`;
 }
