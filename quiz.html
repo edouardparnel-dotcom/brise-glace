@@ -58,8 +58,6 @@ import { QUESTIONS } from './donnees.js';
 const SUR = QUESTIONS.length;
 let PRENOM = '';
 
-const deja = memo('quiz');
-if (deja) resultat(deja.reponses, deja.prenom, true);
 $('prenom').value = memo('prenom') || '';
 
 $('f-nom').addEventListener('submit', e => {
@@ -124,6 +122,11 @@ function resultat(r, prenom, revu) {
     + (r.phrase ? `<div class="carte"><b>Votre phrase :</b> En stage, avant de copier une réponse de l'IA, je ${esc(r.phrase.replace(/^je\s+/i, ''))}</div>` : '')
     + avis();
   branchAvis();
+  // poste partagé ou essai du formateur : repartir de zéro avec un autre prénom
+  const autre = document.createElement('p'); autre.style.cssText = 'text-align:center;margin:18px 0 0';
+  autre.innerHTML = "<button class='mini' type='button' id='b-nouveau'>Ce n'est pas moi : nouveau quiz</button>";
+  v.append(autre);
+  $('b-nouveau').onclick = () => { memo('quiz', null); memo('prenom', ''); location.reload(); };
 }
 
 // Votre avis : anonyme, séparé du quiz (remplace le questionnaire papier si les postes sont là)
@@ -147,6 +150,10 @@ function branchAvis() {
     catch (err) { console.error(err); e.submitter.disabled = false; toast('Envoi impossible, réessayez.'); }
   };
 }
+
+// Quiz déjà fait sur ce poste : on réaffiche sa correction (à la fin, une fois toutes les fonctions prêtes)
+const deja = memo('quiz');
+if (deja?.reponses) resultat(deja.reponses, deja.prenom || '', true);
 </script>
 </body>
 </html>
