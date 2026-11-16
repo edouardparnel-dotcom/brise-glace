@@ -157,7 +157,7 @@
     <div class="logo">B</div>
     <div class="titre"><small>Atelier Batifer</small><b id="t-binome"></b></div>
     <div class="etapes" id="etapes"></div>
-    <nav><a href="ressources.html" target="_blank" rel="noopener">Ressources</a><button type="button" id="b-quitter">Changer de prénom</button></nav>
+    <nav><a href="ressources.html" target="_blank" rel="noopener">Ressources</a><a id="l-quiz-haut" href="quiz.html">Quiz</a><button type="button" id="b-quitter">Changer de prénom</button></nav>
   </header>
   <div class="guide cache" id="guide" aria-live="polite"></div>
   <div class="role" id="role"><div class="qui" id="r-qui"></div><div class="consigne" id="r-consigne"></div></div>
@@ -189,6 +189,7 @@ import { COURRIELS, TACHES, TACHES_SEANCE, SECOURS, MODELE_DEMANDE } from './don
 import { collection, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const SEUL = 'Seul(e)';
+$('l-quiz-haut').href = 'quiz.html' + suffixe;   // le quiz, toujours accessible en haut (même salle)
 let ID = null, MOI = null, AT = null, T = {}, N = 1, vueTache = null, ecoute = null;
 let ongletG = null, ongletD = null, mailOuvert = null, attente = false, brouillonLocal = null, nbMessages = -1;
 const relus = new Set();   // cases « j'ai relu » cochées sur ce poste
