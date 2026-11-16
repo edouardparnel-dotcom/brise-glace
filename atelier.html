@@ -94,6 +94,15 @@
 #demande{max-height:55vh}#brouillon{max-height:75vh}
 .relu{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:10px 0;font-size:15px}
 .relu label{display:flex;gap:6px;align-items:center;cursor:pointer}
+/* fin de l'atelier : la correction du stagiaire */
+.ma-corr{text-align:left;display:grid;gap:10px;margin-top:6px}
+.ma-corr h2{font-size:21px;margin:6px 0 0}
+.ma-corr ul{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.ma-corr li{display:flex;gap:10px;align-items:baseline;font-size:17px;line-height:1.35}
+.ma-corr .s{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:800}
+.ma-corr .oui .s{background:var(--ok-clair);color:var(--ok)}.ma-corr .non .s{background:var(--alerte-clair);color:var(--alerte)}.ma-corr .peut .s{background:var(--papier);color:var(--doux)}
+.ma-corr li span.d{display:block;color:var(--doux);font-size:15px}
+.ma-corr .score{font-family:var(--f-titre);font-size:22px;font-weight:800;color:var(--chantier)}
 .envoye{background:var(--ok-clair);color:var(--ok);border-radius:10px;padding:10px 12px;font-weight:700}
 
 /* paragraphe à reprendre dans la fiche */
@@ -175,6 +184,7 @@
     <h1>Bravo, vous avez terminé !</h1>
     <p>Mme Leroy a votre travail. Nous allons le regarder ensemble ; le quiz viendra juste après.</p>
     <a class="btn" id="l-quiz" href="quiz.html">Faire mon quiz individuel</a>
+    <div class="ma-corr" id="ma-corr"><p class="note" style="text-align:center">Votre correction arrive…</p></div>
     <button class="mini" type="button" id="b-revoir" style="justify-self:center">Revoir mes tâches</button>
   </div>
 </main>
@@ -187,7 +197,8 @@
 </div></dialog>
 
 <script type="module">
-import { db, assistant, SALLE, suffixe, $, esc, slug, prenomPropre, memo, toast, copier, donneesPerso, boutonMain } from './commun.js';
+import { app, db, assistant, SALLE, suffixe, $, esc, slug, prenomPropre, memo, toast, copier, donneesPerso, boutonMain } from './commun.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js';
 import { COURRIELS, TACHES, TACHES_SEANCE, SECOURS, MODELE_DEMANDE } from './donnees.js';
 import { collection, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
@@ -345,6 +356,24 @@ function fini() {
   $('l-quiz').href = 'quiz.html' + suffixe;
   memo('prenom', MOI);
   $('b-revoir').onclick = () => suivreTache(1);
+  maCorrection();
+}
+
+// La correction de son travail, calculée côté serveur (la grille n'est pas dans ce dépôt public)
+async function maCorrection() {
+  const z = $('ma-corr');
+  try {
+    const fn = httpsCallable(getFunctions(app, 'europe-west9'), 'correctionSeance', { timeout: 30000 });
+    const c = (await fn({ salle: SALLE, atelier: ID })).data?.[ID] || {};
+    const blocs = ['1', '2'].filter(n => c[n]).map(n => {
+      const g = c[n];
+      return `<h2>${n === '1' ? "L'exercice : M. Durand" : 'Le bonus : la relance'} <span class="score">${g.bons} / ${g.sur}</span></h2>
+        <ul>${g.points.map(p => `<li class="${p.ok === true ? 'oui' : p.ok === false ? 'non' : 'peut'}"><span class="s">${p.ok === true ? '✓' : p.ok === false ? '✗' : '?'}</span><span><b>${esc(p.titre)}</b><span class="d">${esc(p.detail)}</span></span></li>`).join('')}</ul>`;
+    });
+    z.innerHTML = blocs.length
+      ? `<p class="note" style="text-align:center;margin:0">Votre correction. Une correction automatique peut se tromper : on en parle ensemble juste après.</p>${blocs.join('')}`
+      : '';
+  } catch (e) { console.error(e); z.innerHTML = ''; }
 }
 
 // ——— les panneaux ———
