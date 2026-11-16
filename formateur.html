@@ -123,16 +123,16 @@ function rendre() {
 
 // ——— ma séance : le conducteur (horaires, ce qu'on projette à chaque moment), sans clé USB ———
 const PHASES = [   // séance d'une heure (Parnel 15/11) : la présentation et un peu de pédagogie, sans surcharger
-  [0, 10, 'Accueil et présentation', "Présente-toi en 1 minute, annonce l'objectif. Le mur au vidéoprojecteur : chacun scanne le QR code et remplit sa fiche (image, mot), puis se présente à l'oral en une phrase.",
-    [['index.html#ecran', 'Mur et QR code'], ['diapos.html#1', 'Diapositive de titre'], ['@stagiaires', 'Stagiaires']]],
-  [10, 22, 'Apport démonstratif', "Diapositives 2 à 5 et trois démonstrations seulement : le courriel trop sec, Batifer inconnue (l'IA invente), la demande vague puis en 4 éléments.",
-    [['diapos.html#2', 'Diapositives'], ['demo.html', 'Démonstration'], ['https://chat.mistral.ai', 'Le Chat (secours)']]],
-  [22, 40, 'Mise en situation Batifer', "Diapositive 6, puis l'adresse de l'atelier en grand. Chacun seul, sur son poste : il tape son prénom. Deux tâches : M. Durand, puis la relance. Tu passes aux postes. Passe d'abord voir les alertes rouges.",
-    [['diapos.html#6', 'Diapositive « À vous »'], ['!atelier.html', 'Adresse de l\'atelier en grand'], ['@ateliers', 'Ateliers en direct']]],
+  [0, 10, 'Accueil et présentation', "Diapositives 1 à 4 : toi (photo, parcours), le titre, le cadre de la séance. Le mur au vidéoprojecteur : chacun scanne le QR code et remplit sa fiche (image, mot), puis se présente à l'oral en une phrase.",
+    [['index.html#ecran', 'Mur et QR code'], ['diapos.html#1', 'Diapositives : moi, puis le cadre'], ['@stagiaires', 'Stagiaires']]],
+  [10, 22, 'Apport démonstratif', "Diapositives 5 à 8 et trois démonstrations seulement : le courriel trop sec, Batifer inconnue (l'IA invente), la demande vague puis en 4 éléments.",
+    [['diapos.html#5', 'Diapositives'], ['demo.html', 'Démonstration'], ['https://chat.mistral.ai', 'Le Chat (secours)']]],
+  [22, 40, 'Mise en situation Batifer', "Diapositive 9, puis l'adresse de l'atelier en grand. Chacun seul, sur son poste : il tape son prénom. Deux tâches : M. Durand, puis la relance. Tu passes aux postes. Passe d'abord voir les alertes rouges.",
+    [['diapos.html#9', 'Diapositive « À vous »'], ['!atelier.html', 'Adresse de l\'atelier en grand'], ['@ateliers', 'Ateliers en direct']]],
   [40, 50, 'Retour et analyse', "Projette 2 textes anonymes : une bonne pratique, une erreur utile. Tu joues Mme Leroy : « Qu'avez-vous mis dans l'IA ? Corrigé ? Comment l'avez-vous vérifié ? »",
     [['@projeter', 'Projeter les textes envoyés']]],
-  [50, 60, 'Bilan individuel', "Diapositive 7 et l'adresse du quiz : 6 questions, chacun seul, puis sa phrase et son avis. Termine sur les mots de l'accueil : « Qui changerait son mot ? »",
-    [['diapos.html#7', 'Diapositive du bilan'], ['!quiz.html', 'Adresse du quiz en grand'], ['@quiz', 'Résultats du quiz'], ['index.html#ecran', 'Le mur et ses mots']]],
+  [50, 60, 'Bilan individuel', "Diapositive 10 et l'adresse du quiz : 6 questions, chacun seul, puis sa phrase et son avis. Termine sur les mots de l'accueil : « Qui changerait son mot ? »",
+    [['diapos.html#10', 'Diapositive du bilan'], ['!quiz.html', 'Adresse du quiz en grand'], ['@quiz', 'Résultats du quiz'], ['index.html#ecran', 'Le mur et ses mots']]],
 ];
 const cleDebut = 'debut-seance-' + SALLE;
 const debut = () => { try { return +localStorage.getItem(cleDebut) || 0; } catch { return 0; } };

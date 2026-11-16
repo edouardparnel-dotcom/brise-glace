@@ -36,6 +36,23 @@ body{font-family:'Atkinson Hyperlegible',Arial,sans-serif;color:var(--encre)}
 .quatre div{border:5px solid var(--plan);border-radius:24px;padding:22px 34px;font-size:42px;font-weight:700}
 .quatre b{color:var(--orange-f);font-size:62px;margin-right:18px}
 .quatre span{display:block;font-size:32px;font-weight:400;color:#555;margin-top:6px}
+.moi-grille{display:grid;grid-template-columns:430px 1fr;gap:80px;align-items:center;margin-top:30px}
+.moi-photo{width:430px;height:600px;object-fit:cover;object-position:center 20%;border-radius:30px;border:8px solid #fff;box-shadow:0 30px 60px -30px rgba(24,53,93,.6),0 0 0 6px var(--ciel)}
+.moi-bonjour{font-size:42px;color:#555;margin:0 0 10px}
+.diapo .moi-nom{font-size:104px;border:0;margin:0 0 20px;padding:0}
+.moi-titre{font-size:52px;font-weight:700;color:var(--orange-f);margin:0 0 50px}
+.moi-jour{display:inline-block;font-size:36px;background:var(--bien);color:var(--plan);border-radius:18px;padding:18px 30px;margin:0}
+.parcours{display:grid;grid-template-columns:1fr 1fr;gap:70px 60px;margin-top:40px}
+.parcours div{display:flex;gap:24px;align-items:flex-start}
+.parcours p{margin:0;font-size:40px;line-height:1.25}.parcours b{display:block;color:var(--plan)}
+.parcours span{display:block;font-size:31px;color:#555;margin-top:8px}
+.cadre-grille{display:grid;grid-template-columns:520px 1fr;gap:60px}
+.cadre-infos p{margin:0 0 26px;font-size:36px;line-height:1.25}.cadre-infos b{display:block;font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-f)}
+.temps{list-style:none;margin:0;padding:0;counter-reset:t}
+.temps li{display:flex;gap:24px;align-items:center;font-size:34px;padding:9px 0;border-bottom:3px solid var(--bien)}
+.temps li b{flex:none;width:150px;background:var(--plan);color:#fff;border-radius:12px;text-align:center;font-size:30px;padding:6px 0}
+.regles{position:absolute;left:110px;right:110px;bottom:40px;display:flex;gap:20px;flex-wrap:wrap}
+.regles span{background:var(--mal);border-radius:14px;padding:10px 20px;font-size:26px;font-weight:700;color:var(--plan)}
 .illu{position:absolute;right:90px;width:440px;height:auto}
 .avec-illu ul,.avec-illu > p,.avec-illu .adresse{max-width:880px}
 .quatre div{position:relative}
@@ -57,7 +74,26 @@ body:hover .barre,.barre:focus-within{opacity:1}
 <body>
 <div class="scene" id="scene">
 
-<section class="diapo titre" data-notes="Tu te présentes en 1 minute comme leur formateur du jour. Objectif : savoir utiliser l'IA pour un brouillon, et savoir le corriger. Rassurer : « Ici, on a le droit de se tromper, c'est même prévu. »">
+<section class="diapo moi" data-notes="1 min. « Je m'appelle Parnel Edouard, je suis formateur numérique, et aujourd'hui je suis votre formateur. » Sourire, regarder le groupe, rien de plus : le parcours vient juste après.">
+  <div class="bande"></div><img class="logo" src="images/logo-belle-alliance.png" alt="Belle Alliance">
+  <div class="moi-grille"><img class="moi-photo" src="images/formateur.jpg" alt="Parnel Edouard">
+  <div><p class="moi-bonjour">Bonjour, je suis</p><h1 class="moi-nom">Parnel Edouard</h1><p class="moi-titre">Formateur numérique et IA</p>
+  <p class="moi-jour">Votre formateur aujourd'hui</p></div></div>
+</section>
+
+<section class="diapo" data-notes="1 min. Le parcours en quatre lignes, sans s'y attarder. Le point qui compte pour eux : « J'utilise l'IA tous les jours dans mon travail. Je vais vous montrer comment je m'en sers, et surtout comment je la surveille. »">
+  <div class="bande"></div><img class="logo" src="images/logo-belle-alliance.png" alt="Belle Alliance">
+  <h1>Mon parcours</h1>
+  <div class="parcours">
+    <div><svg viewBox="0 0 48 48" width="58" height="58" style="flex:none"><path d="M4 18l20-10 20 10-20 10z" fill="#18355D"/><path d="M12 22v10c6 5 18 5 24 0V22" fill="none" stroke="#18355D" stroke-width="4"/><path d="M42 19v13" stroke="#F49A28" stroke-width="4"/></svg><p><b>Mastère Design 3D et Animation Interactive</b><span>la création numérique, l'image, l'animation</span></p></div>
+    <div><svg viewBox="0 0 48 48" width="58" height="58" style="flex:none"><rect x="6" y="10" width="36" height="26" rx="3" fill="#18355D"/><path d="M20 18l10 5-10 5z" fill="#F49A28"/><path d="M16 42h16" stroke="#18355D" stroke-width="4"/></svg><p><b>Responsable de production en agence de communication</b><span>depuis trois ans : vidéos, sites, supports</span></p></div>
+    <div><svg viewBox="0 0 48 48" width="58" height="58" style="flex:none"><rect x="4" y="6" width="40" height="26" rx="3" fill="#E3F1FB" stroke="#18355D" stroke-width="3"/><circle cx="14" cy="38" r="5" fill="#F49A28"/><circle cx="34" cy="38" r="5" fill="#F49A28"/><path d="M10 15h22M10 22h14" stroke="#66B0E2" stroke-width="4"/></svg><p><b>Formateur d'adultes au numérique, depuis 2025</b><span>formé à « Former des adultes » ; cours d'informatique, Excel</span></p></div>
+    <div><svg viewBox="0 0 48 48" width="58" height="58" style="flex:none"><rect x="8" y="12" width="32" height="26" rx="8" fill="#E3F1FB" stroke="#18355D" stroke-width="3"/><circle cx="18" cy="25" r="3.5" fill="#18355D"/><circle cx="30" cy="25" r="3.5" fill="#18355D"/><path d="M24 4v8" stroke="#F49A28" stroke-width="4"/><circle cx="24" cy="4" r="3" fill="#F49A28"/></svg><p><b>J'utilise l'IA tous les jours</b><span>pour écrire, organiser, créer des sites et des applications</span></p></div>
+  </div>
+  <div class="pied">« Je pratique ce que je vous montre. »</div>
+</section>
+
+<section class="diapo titre" data-notes="Le titre de la séance. Objectif : savoir utiliser l'IA pour un brouillon, et savoir le corriger. Rassurer : « Ici, on a le droit de se tromper, c'est même prévu. »">
   <div class="bande"></div><img class="logo" src="images/logo-belle-alliance.png" alt="Belle Alliance">
   <h1>L'IA dans le travail administratif</h1>
   <p>Utiliser l'IA pour un brouillon,<br>et savoir le corriger.</p>
@@ -67,6 +103,16 @@ body:hover .barre,.barre:focus-within{opacity:1}
 <rect x="170" y="146" width="210" height="62" rx="16" fill="#FDEBD3"/><rect x="186" y="162" width="170" height="10" rx="5" fill="#F49A28"/><rect x="186" y="182" width="120" height="10" rx="5" fill="#F49A28"/>
 <path d="M200 290h60l14 50h-88z" fill="#18355D"/><rect x="150" y="336" width="160" height="14" rx="7" fill="#18355D"/>
 <path d="M330 360c20-30 40-30 50-10s30 10 50-20" fill="none" stroke="#D6790E" stroke-width="6" stroke-linecap="round"/><path d="M380 300l40 40-14 14-40-40z" fill="#F49A28"/></svg>
+</section>
+
+<section class="diapo" data-notes="1 min. Le cadre, puis on commence : la séance dure une heure, chacun travaille seul sur son poste, et on a le droit de se tromper. Les données sont toutes inventées : on ne met jamais ses vraies informations.">
+  <div class="bande"></div><img class="logo" src="images/logo-belle-alliance.png" alt="Belle Alliance">
+  <h1>Le cadre de la séance</h1>
+  <div class="cadre-grille">
+    <div class="cadre-infos"><p><b>Formation</b>CADGA</p><p><b>Durée</b>1 heure</p><p><b>Objectif</b>utiliser l'IA pour un brouillon, et savoir le corriger</p></div>
+    <ol class="temps"><li><b>10 min</b>Accueil et présentation</li><li><b>12 min</b>Ce que fait l'IA, en direct</li><li><b>18 min</b>À vous : l'entreprise Batifer</li><li><b>10 min</b>On regarde ensemble</li><li><b>10 min</b>Quiz et bilan</li></ol>
+  </div>
+  <div class="regles"><span>✔ On a le droit de se tromper</span><span>✔ Chacun à son rythme</span><span>✔ Rien de vrai : l'entreprise et les clients sont inventés</span></div>
 </section>
 
 <section class="diapo avec-illu" data-notes="2 min. Reprends les mots de l'accueil. « L'IA a appris sur une énorme quantité de textes. Elle comprend une demande et produit une réponse. Mais elle peut se tromper, inventer ou donner une information dépassée, même quand elle cherche sur internet. Et elle ne connaît pas votre entreprise. »">
