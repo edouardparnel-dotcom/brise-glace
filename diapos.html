@@ -48,6 +48,10 @@ body:hover .barre,.barre:focus-within{opacity:1}
 .barre button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:6px 14px;cursor:pointer;font:inherit}
 .notes{position:fixed;left:16px;right:16px;bottom:58px;background:rgba(14,26,43,.94);color:#fff;border-radius:14px;padding:14px 18px;font:18px/1.45 system-ui,sans-serif;display:none;max-height:40vh;overflow:auto}
 .notes.vue{display:block}
+/* impression ou PDF : toutes les diapositives, une par page, à leur taille réelle */
+@media print{@page{size:1600px 900px;margin:0}html,body{height:auto;overflow:visible;background:#fff}.scene{position:static;display:block}
+.diapo{display:block!important;position:relative!important;left:auto!important;top:auto!important;transform:none!important;break-after:page;page-break-after:always}
+.barre,.notes{display:none!important}}
 </style>
 </head>
 <body>
