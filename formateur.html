@@ -147,7 +147,7 @@ const PHASES = [   // séance d'une heure (Parnel 15/11) : la présentation et u
     [['index.html#ecran', 'Mur et QR code'], ['diapos.html#1', 'Diapositives : moi, puis le cadre'], ['@stagiaires', 'Stagiaires']]],
   [10, 22, 'Apport démonstratif', "Diapositives 5 à 8 et trois démonstrations seulement : le courriel trop sec, Batifer inconnue (l'IA invente), la demande vague puis en 4 éléments.",
     [['diapos.html#5', 'Diapositives'], ['demo.html', 'Démonstration'], ['https://chat.mistral.ai', 'Le Chat (secours)']]],
-  [22, 40, 'Mise en situation Batifer', "Diapositive 9, puis l'adresse de l'atelier en grand. Chacun seul, sur son poste : il tape son prénom. Deux tâches : M. Durand, puis la relance. Tu passes aux postes. Passe d'abord voir les alertes rouges.",
+  [22, 40, 'Mise en situation Batifer', "Diapositive 9, puis l'adresse de l'atelier en grand. Chacun seul, sur son poste : il tape son prénom. Un exercice : répondre à M. Durand ; la relance Imméka en bonus pour ceux qui vont vite. Tu passes aux postes. Passe d'abord voir les alertes rouges.",
     [['diapos.html#9', 'Diapositive « À vous »'], ['!atelier.html', 'Adresse de l\'atelier en grand'], ['@ateliers', 'Ateliers en direct']]],
   [40, 50, 'Retour et analyse', "Projette 2 textes anonymes : une bonne pratique, une erreur utile. Tu joues Mme Leroy : « Qu'avez-vous mis dans l'IA ? Corrigé ? Comment l'avez-vous vérifié ? »",
     [['@projeter', 'Projeter les textes envoyés']]],
@@ -228,7 +228,7 @@ function vueAteliers() {
           <span class="pastille ${dem ? 'p-ok' : 'p-neutre'}">${dem} demande${dem > 1 ? 's' : ''}</span>
           ${evitees.length ? `<span class="pastille p-ok" title="Averti, a corrigé son message">${evitees.length} donnée${evitees.length > 1 ? 's' : ''} retirée${evitees.length > 1 ? 's' : ''}</span>` : ''}
           <span class="pastille ${t.envoi ? 'p-ok' : 'p-neutre'}">${t.envoi ? '✓ envoyé' : 'pas envoyé'}</span>
-          <span class="pastille ${t.ficheFinie ? 'p-ok' : 'p-neutre'}">fiche ${lignes} passage${lignes > 1 ? 's' : ''}${t.ficheFinie ? ' ✓' : ''}</span></div></div>`;
+          ${lignes ? `<span class="pastille ${t.ficheFinie ? 'p-ok' : 'p-neutre'}">fiche ${lignes} passage${lignes > 1 ? 's' : ''}${t.ficheFinie ? ' ✓' : ''}</span>` : ''}</div></div>`;
       }).join('')}
       <details data-k="${id}"><summary>Voir leur travail</summary><div class="detail">${TACHES_SEANCE.map(n => detailTache(id, n)).join('')}</div></details></div>`;
   }).join('')}</div>`;
@@ -302,7 +302,7 @@ function documents() {
     ${l('docs/formateur/questionnaire-papier.pdf', 'Questionnaire de satisfaction papier', 'En secours de l\'avis en ligne')}</div>
     <h2>Pour les stagiaires</h2><div class="liens">
     ${l('docs/fiche-memo.pdf', 'Fiche mémo', '10 exemplaires')}${l('docs/dossier-batifer.pdf', 'Dossier Batifer', '5 exemplaires, en secours')}
-    ${l('docs/fiche-de-tri.pdf', 'Fiche de tri', 'En secours : elle est dans l\'atelier')}${l('docs/formateur/fiche-pedagogique-detaillee.pdf', 'Fiche pédagogique détaillée', "Pour l'équipe pédagogique : méthodes, déroulé, liens")}${l('docs/diapositives.pdf', 'Diapositives', 'À projeter')}</div>`;
+    ${l('docs/formateur/fiche-pedagogique-detaillee.pdf', 'Fiche pédagogique détaillée', "Pour l'équipe pédagogique : méthodes, déroulé, liens")}${l('docs/diapositives.pdf', 'Diapositives', 'À projeter')}</div>`;
 }
 
 function brancher() {

@@ -173,7 +173,7 @@
 <main class="etroit cache" id="v-fini">
   <div class="carte" style="text-align:center;display:grid;gap:12px">
     <h1>Bravo, vous avez terminé !</h1>
-    <p>Mme Leroy a vos textes. Nous allons les regarder ensemble ; le quiz viendra juste après.</p>
+    <p>Mme Leroy a votre travail. Nous allons le regarder ensemble ; le quiz viendra juste après.</p>
     <a class="btn" id="l-quiz" href="quiz.html">Faire mon quiz individuel</a>
     <button class="mini" type="button" id="b-revoir" style="justify-self:center">Revoir mes tâches</button>
   </div>
@@ -280,7 +280,7 @@ function afficher() {
   if (vueTache > 3) return fini();
   $('v-fini').classList.add('cache'); $('v-travail').classList.remove('cache');
   $('t-binome').textContent = seul() ? MOI : `${AT.a} et ${AT.b}`;
-  $('etapes').innerHTML = TACHES_SEANCE.map(n => `<span class="${n === vueTache ? 'encours' : n < AT.tache ? 'fait' : ''}">${n < AT.tache ? '✓ ' : ''}${n}. ${esc(TACHES[n].court)}${TACHES[n].obligatoire ? '' : ' (bonus)'}</span>`).join('');
+  $('etapes').innerHTML = TACHES_SEANCE.map(n => `<span class="${n === vueTache ? 'encours' : n < AT.tache ? 'fait' : ''}">${n < AT.tache ? '✓ ' : ''}${TACHES[n].obligatoire ? n + '. ' : 'Bonus : '}${esc(TACHES[n].court)}</span>`).join('');
   const t = TACHES[vueTache], p = pilote(vueTache), lecture = vueTache < AT.tache;
   $('role').classList.toggle('controle', !jeTape());
   $('r-qui').textContent = lecture ? `Tâche ${vueTache} terminée` : seul() ? `Tâche ${vueTache} : ${t.titre}` : jeTape() ? `Tâche ${vueTache} : c'est votre tour de taper` : `Tâche ${vueTache} : c'est au tour ${de(p)} de taper`;
@@ -310,9 +310,12 @@ function guide(lecture, demandes) {
       ['Relire et envoyer', 'Relisez, cochez les 3 cases, puis « Envoyer à Mme Leroy ».', 'Une première relance reste polie.', !!T.envoi],
     ];
   const ici = lecture ? -1 : etapes.findIndex(e => !e[3]);
-  const fait = lecture || ici < 0;
-  const [, quoi, aide] = fait ? [null, vueTache === 1 ? 'Envoyé ! Cliquez sur « Passer à la tâche 2 », juste en dessous.' : 'Envoyé ! Cliquez sur « Terminer l\'atelier », juste en dessous.', 'Mme Leroy a votre texte.'] : etapes[ici];
-  return `<p class="tache"><small>Tâche ${vueTache} sur 2</small>${esc(t.titre)}</p>
+  const fait = lecture || ici < 0 || !!T.envoi;   // envoyé = fait, même sans passer par l'IA
+  // un seul exercice (M. Durand) ; la relance est un bonus, pour que personne ne se sente en retard
+  const [, quoi, aide] = fait ? [null,
+    vueTache === 1 ? "Bravo, l'exercice est fait ! Il vous reste du temps ? Essayez le bonus, juste en dessous." : "Bravo, bonus réussi ! Cliquez sur « Terminer l'atelier », juste en dessous.",
+    vueTache === 1 ? "Mme Leroy a votre texte. Le bonus n'est pas obligatoire : vous pouvez aussi terminer." : "Mme Leroy a votre texte."] : etapes[ici];
+  return `<p class="tache"><small>${vueTache === 1 ? "L'exercice" : "Bonus · si vous avez le temps"}</small>${esc(t.titre)}</p>
     <div class="maintenant ${fait ? 'fini' : ''}"><span class="num">${fait ? '✓' : ici + 1}</span><div><b>${esc(quoi)}</b><span>${esc(aide)}</span></div></div>
     <ol>${etapes.map((e, k) => `<li class="${e[3] && k !== ici ? 'ok' : k === ici ? 'ici' : ''}">${e[3] && k !== ici ? '✓' : k + 1}. ${esc(e[0])}</li>`).join('')}</ol>`;
 }
@@ -321,10 +324,11 @@ function finDeTache(lecture) {
   const el = $('fin-tache');
   if (lecture) { el.innerHTML = `<div class="bravo"><b>Tâche ${vueTache} terminée. Vous la relisez.</b><button class="btn bleu" type="button" data-aller="${AT.tache}">${AT.tache > 3 ? 'Retour' : 'Revenir à la tâche en cours'}</button></div>`; return lier(el); }
   if (!T.envoi) { el.innerHTML = ''; return; }
-  const suite = vueTache === 1 ? `<button class="btn vert" type="button" data-suivante="2">Passer à la tâche 2${seul() ? '' : ' : les rôles s\'inversent'}</button>`
+  const suite = vueTache === 1 ? (seul() ? `<button class="btn vert" type="button" data-suivante="2">Faire le bonus : la relance</button><button class="btn clair" type="button" data-suivante="4">Terminer l'atelier</button>`
+      : `<button class="btn vert" type="button" data-suivante="2">Passer à la tâche 2 : les rôles s'inversent</button>`)
     : vueTache === 2 ? `<button class="btn vert" type="button" data-suivante="4">Terminer l'atelier</button>`
     : `<button class="btn vert" type="button" data-suivante="4">Terminer l'atelier</button>`;
-  el.innerHTML = `<div class="bravo"><b>Tâche ${vueTache} faite : texte envoyé à Mme Leroy.</b>${suite}</div>`;
+  el.innerHTML = `<div class="bravo"><b>${seul() ? (vueTache === 1 ? "Exercice fait" : "Bonus fait") : `Tâche ${vueTache} faite`} : texte envoyé à Mme Leroy.</b>${suite}</div>`;
   lier(el);
 }
 
@@ -347,7 +351,7 @@ function fini() {
 function dessinerZone(lecture) {
   const z = $('zone'), focus = document.activeElement, idf = focus?.id, sel = [focus?.selectionStart, focus?.selectionEnd];
   const defil = { g: $('p-gauche')?.scrollTop || 0, d: $('p-droite')?.scrollTop || 0, onglet: ongletG };
-  const gauche = seul() || jeTape() ? ['mail', 'brouillon', ...(seul() ? ['fiche'] : [])] : ['direct', 'brouillon', 'mail'];
+  const gauche = seul() || jeTape() ? ['mail', 'brouillon'] : ['direct', 'brouillon', 'mail'];   // seul : plus de fiche de tri (16/11, trop compliqué en 18 min)
   const droite = seul() || jeTape() ? 'ia' : 'fiche';
   // pour la relance (tâche 2), celui qui remplit la fiche part du texte de Lucas, à comparer à la facture
   ongletG = gauche.includes(ongletG) ? ongletG : (vueTache === 2 && !seul() && !jeTape() ? 'brouillon' : gauche[0]);

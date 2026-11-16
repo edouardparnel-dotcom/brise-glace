@@ -80,14 +80,15 @@ Lucas`,
   // les notes de réunion (ancienne tâche 3) ne sont plus dans la boîte : séance d'une heure (15/11)
 ];
 
-// Séance d'une heure (Parnel 15/11) : deux tâches, plus de bonus ; le quiz garde 6 questions.
+// Séance d'une heure : 18 minutes d'atelier pour découvrir l'outil (Parnel 16/11) : UN exercice (M. Durand), la relance en bonus
+// pour ceux qui vont vite, sans frustrer les autres ; plus de fiche de tri. Le quiz garde 6 questions.
 export const TACHES_SEANCE = [1, 2];
 export const TACHES = {
   1: { titre: 'Répondre à M. Durand', court: 'M. Durand', courriel: 'durand', obligatoire: true,
        consigne: 'Faites rédiger par l\'IA une réponse à M. Durand, puis relisez-la et envoyez-la à Mme Leroy pour signature.',
        envoi: { a: 'Michel Durand (après signature de Mme Leroy)', objet: 'Re : ENCORE une facture ?!' },
        piege: 'Son courriel contient son adresse, son numéro client et son RIB.' },
-  2: { titre: 'Envoyer la relance à Imméka', court: 'Relance Imméka', courriel: 'lucas', obligatoire: true,
+  2: { titre: 'Envoyer la relance à Imméka', court: 'Relance Imméka', courriel: 'lucas', obligatoire: false,
        consigne: 'La relance de Lucas est « prête ». Comparez-la à la facture avant de l\'envoyer à Mme Leroy. Corrigez-la, avec ou sans l\'IA.',
        envoi: { a: 'Imméka, service comptabilité (après signature de Mme Leroy)', objet: 'Relance pour la facture n° F-2026-0392' },
        brouillonDepart: RELANCE },
