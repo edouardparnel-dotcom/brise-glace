@@ -190,6 +190,8 @@ const $ = s => document.getElementById(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const entrees = collection(db, 'murs', SALLE, 'entrees');
 const vue = location.hash.replace('#', '');
+// ✋ sur le téléphone ou le poste du stagiaire seulement (pas sur le mur projeté)
+if (!vue) import('./commun.js').then(m => m.boutonMain(() => $('prenom')?.value, 'accueil')).catch(console.error);
 
 addEventListener('hashchange', () => location.reload());   // #ecran, #formateur : chaque vue se charge à part
 if (vue === 'ecran') ecran();

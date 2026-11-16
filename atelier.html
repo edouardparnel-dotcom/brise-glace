@@ -184,13 +184,14 @@
 </div></dialog>
 
 <script type="module">
-import { db, assistant, SALLE, suffixe, $, esc, slug, prenomPropre, memo, toast, copier, donneesPerso } from './commun.js';
+import { db, assistant, SALLE, suffixe, $, esc, slug, prenomPropre, memo, toast, copier, donneesPerso, boutonMain } from './commun.js';
 import { COURRIELS, TACHES, TACHES_SEANCE, SECOURS, MODELE_DEMANDE } from './donnees.js';
 import { collection, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const SEUL = 'Seul(e)';
 $('l-quiz-haut').href = 'quiz.html' + suffixe;   // le quiz, toujours accessible en haut (même salle)
 let ID = null, MOI = null, AT = null, T = {}, N = 1, vueTache = null, ecoute = null;
+boutonMain(() => MOI || memo('prenom'), 'atelier');
 let ongletG = null, ongletD = null, mailOuvert = null, attente = false, brouillonLocal = null, nbMessages = -1;
 const relus = new Set();   // cases « j'ai relu » cochées sur ce poste
 const ecrire = {};   // écritures retardées (brouillon, fiche)

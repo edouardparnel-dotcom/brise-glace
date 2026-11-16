@@ -51,12 +51,13 @@
 <main class="etroit cache" id="v-resultat"></main>
 
 <script type="module">
-import { db, SALLE, $, esc, prenomPropre, memo, toast } from './commun.js';
+import { db, SALLE, $, esc, prenomPropre, memo, toast, boutonMain } from './commun.js';
 import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import { QUESTIONS } from './donnees.js';
 
 const SUR = QUESTIONS.length;
 let PRENOM = '';
+boutonMain(() => PRENOM || memo('prenom'), 'quiz');
 
 $('prenom').value = memo('prenom') || '';
 

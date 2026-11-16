@@ -73,11 +73,17 @@ details summary{cursor:pointer;color:var(--plan-2);font-weight:700}
 .grand .boutons-grand{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:28px}
 .grand .boutons-grand button{font:inherit;font-size:22px;font-weight:700;border-radius:14px;padding:12px 24px;cursor:pointer;border:2px solid #fff}
 .grand .b-copier{background:#fff;color:var(--plan)}.grand .b-fermer{background:transparent;color:#fff}
+#mains:empty{display:none}
+#mains{position:sticky;top:0;z-index:40;background:#E8692C;color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:18px}
+#mains .m{background:#fff;color:#1b1f2e;border-radius:999px;padding:6px 8px 6px 14px;display:flex;gap:10px;align-items:center;font-weight:700}
+#mains .m small{font-weight:400;color:#666}
+#mains .m button{font:inherit;font-size:15px;border:0;border-radius:999px;padding:6px 12px;background:#18355D;color:#fff;cursor:pointer}
 </style>
 </head>
 <body>
 <header class="haut"><div class="logo">B</div><div class="titre"><small>Vue formateur · <span id="salle"></span></small><b>L'IA dans les métiers de l'administratif</b></div>
   <nav><a id="l-ecran" href="index.html#ecran" target="_blank" rel="noopener">Mur projeté</a></nav></header>
+<div id="mains" aria-live="polite"></div>
 <div class="onglets" role="tablist" id="onglets"></div>
 <main class="vue" id="vue"></main>
 
@@ -108,6 +114,16 @@ onSnapshot(collection(db, 'murs', SALLE, 'ateliers'), s => {
 });
 onSnapshot(query(collection(db, 'murs', SALLE, 'quiz'), orderBy('le')), s => { quiz = s.docs.map(d => d.data()); rendre(); });
 onSnapshot(query(collection(db, 'murs', SALLE, 'avis'), orderBy('le')), s => { avis = s.docs.map(d => d.data()); rendre(); });
+// ✋ mains levées : bandeau orange en haut, indépendant des onglets ; « C'est fait » baisse la main chez le stagiaire
+const PAGES = { accueil: 'accueil', atelier: "à l'atelier", quiz: 'au quiz' };
+let nbMains = 0;
+onSnapshot(collection(db, 'murs', SALLE, 'mains'), s => {
+  const l = s.docs.filter(d => d.data().active).sort((a, b) => (a.data().le?.seconds || 0) - (b.data().le?.seconds || 0));
+  $('mains').innerHTML = l.length ? '<b>✋ Main levée :</b>' + l.map(d => `<span class="m">${esc(d.data().prenom)} <small>${PAGES[d.data().page] || ''}</small><button type="button" data-baisser="${esc(d.id)}">C'est fait</button></span>`).join('') : '';
+  $('mains').querySelectorAll('[data-baisser]').forEach(b => b.onclick = () => { const v = s.docs.find(d => d.id === b.dataset.baisser).data(); setDoc(doc(db, 'murs', SALLE, 'mains', b.dataset.baisser), { prenom: v.prenom, page: v.page, active: false, le: serverTimestamp() }); });
+  if (l.length > nbMains) { try { const c = new AudioContext(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = 880; g.gain.value = .08; o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + .18); } catch {} }
+  nbMains = l.length; document.title = (l.length ? `(✋ ${l.length}) ` : '') + 'Vue formateur';
+});
 
 const ONGLETS = [['seance', 'Ma séance', null], ['stagiaires', 'Stagiaires', () => entrees.length], ['ateliers', 'Ateliers en direct', () => Object.keys(ateliers).length],
   ['projeter', 'Projeter', null], ['quiz', 'Quiz', () => quiz.length], ['avis', 'Avis', () => avis.length], ['documents', 'Documents et liens', null]];
