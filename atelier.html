@@ -89,6 +89,9 @@
 .envoi-tete{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:15px;margin-bottom:8px}
 .envoi-tete span{color:var(--doux)}
 #brouillon{min-height:280px;font-size:16px;line-height:1.5}
+/* les zones de texte grandissent avec leur contenu : on voit tout le texte, ou presque */
+#demande,#brouillon,.ligne-tri textarea{field-sizing:content;resize:vertical}
+#demande{max-height:55vh}#brouillon{max-height:75vh}
 .relu{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:10px 0;font-size:15px}
 .relu label{display:flex;gap:6px;align-items:center;cursor:pointer}
 .envoye{background:var(--ok-clair);color:var(--ok);border-radius:10px;padding:10px 12px;font-weight:700}
@@ -191,6 +194,12 @@ import { collection, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp }
 const SEUL = 'Seul(e)';
 $('l-quiz-haut').href = 'quiz.html' + suffixe;   // le quiz, toujours accessible en haut (même salle)
 let ID = null, MOI = null, AT = null, T = {}, N = 1, vueTache = null, ecoute = null;
+// Navigateur sans « field-sizing » : on agrandit la zone de texte à la main, à chaque frappe et quand un texte y est inséré
+if (!CSS.supports('field-sizing', 'content')) {
+  const ajuster = t => { if (t?.tagName !== 'TEXTAREA') return; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 4, innerHeight * (t.id === 'brouillon' ? .75 : .55)) + 'px'; };
+  document.addEventListener('input', e => ajuster(e.target));
+  new MutationObserver(() => document.querySelectorAll('#demande,#brouillon').forEach(ajuster)).observe(document.body, { childList: true, subtree: true });
+}
 boutonMain(() => MOI || memo('prenom'), 'atelier');
 let ongletG = null, ongletD = null, mailOuvert = null, attente = false, brouillonLocal = null, nbMessages = -1;
 const relus = new Set();   // cases « j'ai relu » cochées sur ce poste
