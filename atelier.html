@@ -20,6 +20,18 @@
 .role.controle{background:var(--bleu-clair)}
 .role .qui{font-family:var(--f-titre);font-size:20px;font-weight:700}
 .role .consigne{color:var(--doux);flex:1 1 320px}
+.guide{padding:14px max(16px,2vw) 16px;background:var(--orange-clair);border-bottom:2px solid var(--trait)}
+.guide .tache{font-family:var(--f-titre);font-size:30px;font-weight:800;line-height:1.15;margin:0;color:var(--encre)}
+.guide .tache small{display:inline-block;font-size:17px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--chantier);border-radius:8px;padding:3px 10px;margin-right:12px;vertical-align:5px}
+.guide .maintenant{display:flex;gap:16px;align-items:flex-start;margin:12px 0 12px;background:#fff;border:3px solid var(--chantier);border-radius:16px;padding:14px 18px}
+.guide .maintenant .num{flex:none;width:52px;height:52px;border-radius:50%;background:var(--chantier);color:#fff;display:grid;place-items:center;font-family:var(--f-titre);font-weight:800;font-size:28px}
+.guide .maintenant b{display:block;font-size:26px;line-height:1.25}
+.guide .maintenant span{display:block;font-size:20px;color:var(--doux);margin-top:4px}
+.guide .maintenant.fini{border-color:var(--ok)}.guide .maintenant.fini .num{background:var(--ok)}
+.guide ol{list-style:none;margin:0;padding:0;display:flex;gap:10px;flex-wrap:wrap}
+.guide ol li{font-size:18px;border-radius:12px;padding:8px 14px;background:var(--carte);border:2px solid var(--trait);color:var(--doux)}
+.guide ol li.ici{border-color:var(--chantier);color:var(--encre);font-weight:700}
+.guide ol li.ok{border-color:#b7dcc8;background:var(--ok-clair);color:var(--ok);font-weight:700}
 .suivi{display:flex;gap:8px;flex-wrap:wrap;padding:8px max(16px,2vw);border-bottom:1px solid var(--trait);background:var(--carte);font-size:14px}
 .suivi span{border-radius:999px;padding:3px 10px;background:var(--papier);border:1px solid var(--trait)}
 .suivi span.ok{background:var(--ok-clair);border-color:#b7dcc8;color:var(--ok);font-weight:700}
@@ -147,6 +159,7 @@
     <div class="etapes" id="etapes"></div>
     <nav><a href="ressources.html" target="_blank" rel="noopener">Ressources</a><button type="button" id="b-quitter">Changer de prénom</button></nav>
   </header>
+  <div class="guide cache" id="guide" aria-live="polite"></div>
   <div class="role" id="role"><div class="qui" id="r-qui"></div><div class="consigne" id="r-consigne"></div></div>
   <div class="suivi" id="suivi" aria-live="polite"></div>
   <div id="fin-tache"></div>
@@ -267,8 +280,30 @@ function afficher() {
     + `<span class="${T.envoi ? 'ok' : ''}">${T.envoi ? '✓' : '3.'} Envoyé à Mme Leroy</span>`
     + `<span class="${T.ficheFinie ? 'ok' : ''}">${T.ficheFinie ? '✓' : '4.'} Fiche de tri${seul() ? ' (si vous voulez)' : ` (${esc(pilote(vueTache) === AT.a ? AT.b : AT.a)})`}</span>`
     + (attente && !jeTape() ? '' : '') + (ms.length && ms.at(-1).role === 'user' && !jeTape() ? `<span class="ecrit">${esc(p)} attend la réponse de l'IA…</span>` : '');
+  // travail seul : le guide en grand remplace le bandeau et les pastilles
+  $('guide').classList.toggle('cache', !seul()); $('role').classList.toggle('cache', seul()); $('suivi').classList.toggle('cache', seul());
+  if (seul()) $('guide').innerHTML = guide(lecture, demandes);
   finDeTache(lecture);
   dessinerZone(lecture);
+}
+
+// Les étapes de chaque tâche, et la seule chose à faire maintenant (consignes courtes, en grand)
+function guide(lecture, demandes) {
+  const t = TACHES[vueTache], texte = (brouillonLocal ?? T.brouillon ?? t.brouillonDepart ?? '').trim();
+  const etapes = vueTache === 1 ? [
+      ['Lire, puis demander à l\'IA', 'Lisez le courriel de M. Durand, à gauche. Puis écrivez votre demande à l\'IA, à droite.', 'Sans nom, sans adresse, sans RIB. Besoin d\'aide : « Partir du modèle en 4 éléments ».', demandes > 0],
+      ['Prendre sa réponse', 'Sous la réponse de l\'IA : « Mettre dans mon texte ».', 'Elle arrive dans l\'onglet « Texte à envoyer », à gauche.', !!texte],
+      ['Relire et envoyer', 'Relisez, corrigez, cochez les 3 cases, puis « Envoyer à Mme Leroy ».', 'Les noms, les montants, les dates : tout doit être juste.', !!T.envoi],
+    ] : [
+      ['Comparer, puis corriger', 'Comparez la relance avec la facture (courriel de Lucas, à gauche). Puis corrigez-la dans « Texte à envoyer ».', 'Regardez bien le montant, la date d\'échéance et le ton. Avec ou sans l\'IA.', texte !== (t.brouillonDepart || '').trim()],
+      ['Relire et envoyer', 'Relisez, cochez les 3 cases, puis « Envoyer à Mme Leroy ».', 'Une première relance reste polie.', !!T.envoi],
+    ];
+  const ici = lecture ? -1 : etapes.findIndex(e => !e[3]);
+  const fait = lecture || ici < 0;
+  const [, quoi, aide] = fait ? [null, vueTache === 1 ? 'Envoyé ! Cliquez sur « Passer à la tâche 2 », juste en dessous.' : 'Envoyé ! Cliquez sur « Terminer l\'atelier », juste en dessous.', 'Mme Leroy a votre texte.'] : etapes[ici];
+  return `<p class="tache"><small>Tâche ${vueTache} sur 2</small>${esc(t.titre)}</p>
+    <div class="maintenant ${fait ? 'fini' : ''}"><span class="num">${fait ? '✓' : ici + 1}</span><div><b>${esc(quoi)}</b><span>${esc(aide)}</span></div></div>
+    <ol>${etapes.map((e, k) => `<li class="${e[3] && k !== ici ? 'ok' : k === ici ? 'ici' : ''}">${e[3] && k !== ici ? '✓' : k + 1}. ${esc(e[0])}</li>`).join('')}</ol>`;
 }
 
 function finDeTache(lecture) {
