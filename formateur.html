@@ -69,6 +69,10 @@ details summary{cursor:pointer;color:var(--plan-2);font-weight:700}
 .grand{position:fixed;inset:0;background:var(--plan);color:#fff;z-index:40;display:grid;place-items:center;text-align:center;padding:24px;cursor:pointer}
 .grand b{font-family:var(--f-titre);font-size:clamp(28px,5.5vw,76px);word-break:break-all;line-height:1.1}
 .grand span{display:block;margin-top:18px;font-size:22px;opacity:.8}
+.grand b{cursor:text;user-select:all}
+.grand .boutons-grand{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+.grand .boutons-grand button{font:inherit;font-size:22px;font-weight:700;border-radius:14px;padding:12px 24px;cursor:pointer;border:2px solid #fff}
+.grand .b-copier{background:#fff;color:var(--plan)}.grand .b-fermer{background:transparent;color:#fff}
 </style>
 </head>
 <body>
@@ -78,7 +82,7 @@ details summary{cursor:pointer;color:var(--plan-2);font-weight:700}
 <main class="vue" id="vue"></main>
 
 <script type="module">
-import { db, SALLE, suffixe, $, esc } from './commun.js';
+import { db, SALLE, suffixe, $, esc, copier, toast } from './commun.js';
 import { TACHES, TACHES_SEANCE, QUESTIONS } from './donnees.js';
 import { collection, doc, onSnapshot, setDoc, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
@@ -282,7 +286,7 @@ function documents() {
     ${l('docs/formateur/questionnaire-papier.pdf', 'Questionnaire de satisfaction papier', 'En secours de l\'avis en ligne')}</div>
     <h2>Pour les stagiaires</h2><div class="liens">
     ${l('docs/fiche-memo.pdf', 'Fiche mémo', '10 exemplaires')}${l('docs/dossier-batifer.pdf', 'Dossier Batifer', '5 exemplaires, en secours')}
-    ${l('docs/fiche-de-tri.pdf', 'Fiche de tri', 'En secours : elle est dans l\'atelier')}${l('docs/formateur/fiche-pedagogique-detaillee.pdf', 'Fiche pédagogique détaillée', 'Pour l'équipe pédagogique : méthodes, déroulé, liens')}${l('docs/diapositives.pdf', 'Diapositives', 'À projeter')}</div>`;
+    ${l('docs/fiche-de-tri.pdf', 'Fiche de tri', 'En secours : elle est dans l\'atelier')}${l('docs/formateur/fiche-pedagogique-detaillee.pdf', 'Fiche pédagogique détaillée', "Pour l'équipe pédagogique : méthodes, déroulé, liens")}${l('docs/diapositives.pdf', 'Diapositives', 'À projeter')}</div>`;
 }
 
 function brancher() {
@@ -294,8 +298,13 @@ function brancher() {
   $('b-plein')?.addEventListener('click', () => document.documentElement.requestFullscreen?.().catch(() => {}));
   v.querySelectorAll('[data-grand]').forEach(b => b.onclick = () => {
     const g = document.createElement('div'); g.className = 'grand';
-    g.innerHTML = `<div><b>${esc((BASE + b.dataset.grand + suffixe).replace(/^https:\/\//, ''))}</b><span>Touchez l'écran pour fermer</span></div>`;
-    g.onclick = () => g.remove(); document.body.append(g);
+    // l'adresse en grand, à projeter ; on peut aussi la sélectionner ou la copier (à coller dans un message, au tableau numérique…)
+    const lien = BASE + b.dataset.grand + suffixe;
+    g.innerHTML = `<div><b>${esc(lien.replace(/^https:\/\//, ''))}</b><div class="boutons-grand"><button type="button" class="b-copier">Copier le lien</button><button type="button" class="b-fermer">Fermer</button></div><span>Ou touchez le fond de l'écran pour fermer</span></div>`;
+    g.querySelector('.b-copier').onclick = async e => { e.stopPropagation(); await copier(lien); e.target.textContent = 'Lien copié ✓'; toast('Lien copié : collez-le avec Ctrl + V.'); };
+    g.querySelector('.b-fermer').onclick = () => g.remove();
+    g.onclick = e => { if (e.target === g) g.remove(); };
+    document.body.append(g);
   });
   const lire = () => [...v.querySelectorAll('.binomes .carte')].map((c, i) => ({ a: $(`b-sel-${i}-a`).value, b: $(`b-sel-${i}-b`).value })).filter(b => b.a || b.b);
   v.querySelectorAll('.binomes select').forEach(s => s.onchange = () => { brouillonBinomes = lire(); });
