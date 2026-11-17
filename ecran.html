@@ -46,6 +46,7 @@ function adresse(e) {
   if (e.page === 'mur') return 'index.html' + s + '#ecran';
   if (e.page === 'diapos') return 'diapos.html' + s + '#' + (e.diapo || 1);
   if (e.page === 'demo') return 'demo.html' + s;
+  if (e.page === 'corrquiz') return 'formateur.html' + (s ? s + '&' : '?') + 'ecran=quiz&q=' + (e.question || 1);
   if (e.page === 'textes') return 'formateur.html' + (s ? s + '&' : '?') + 'ecran=textes&t=' + (e.tache || 1);
   return '';
 }
@@ -60,13 +61,14 @@ function afficher() {
     return;
   }
   g.classList.add('cache'); cadre.classList.remove('cache');
-  const page = url.split('#')[0].split('?')[0] + (E.page === 'textes' ? E.tache : '');
+  const page = url.split('#')[0].split('?')[0] + (E.page === 'textes' ? E.tache : E.page === 'corrquiz' ? 'quiz' : '');
   if (page !== chargee) { chargee = page; cadre.src = url; cadre.onload = envoyer; }
   else envoyer();
 }
 function envoyer() {   // la diapositive ou le stagiaire en grand, à la page déjà ouverte
   const w = cadre.contentWindow; if (!w) return;
   if (E.page === 'diapos') w.postMessage({ diapo: E.diapo || 1 }, location.origin);
+  if (E.page === 'corrquiz') w.postMessage({ question: E.question || 1 }, location.origin);
   if (E.page === 'mur') w.postMessage({ fiche: Number.isInteger(E.fiche) ? E.fiche : -1 }, location.origin);
 }
 onSnapshot(REF, s => { E = s.data() || { page: 'pause' }; afficher(); });
