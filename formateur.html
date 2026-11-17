@@ -74,6 +74,21 @@ details summary{cursor:pointer;color:var(--plan-2);font-weight:700}
 .grand .boutons-grand{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:28px}
 .grand .boutons-grand button{font:inherit;font-size:22px;font-weight:700;border-radius:14px;padding:12px 24px;cursor:pointer;border:2px solid #fff}
 .grand .b-copier{background:#fff;color:var(--plan)}.grand .b-fermer{background:transparent;color:#fff}
+/* 📺 télécommande : ce que montre l'écran projeté (ecran.html sur l'ordi du vidéoprojecteur), à piloter depuis le téléphone */
+body{padding-bottom:150px}
+.tele{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#14304f;color:#fff;padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:grid;gap:8px;box-shadow:0 -6px 20px rgba(0,0,0,.2)}
+.tele-haut{display:flex;align-items:center;gap:10px;font-size:16px}.tele-haut span{flex:1}.tele-haut b{color:#F49A28}
+.tele button{font:inherit;font-weight:700;border-radius:10px;border:2px solid rgba(255,255,255,.5);background:transparent;color:#fff;padding:7px 12px;cursor:pointer}
+.tele button.actif{background:#F49A28;border-color:#F49A28;color:#14304f}
+.tele-ctrl{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}.tele-ctrl:empty{display:none}
+.tele-ctrl .gros{font-size:22px;padding:8px 22px;background:#fff;color:#14304f;border-color:#fff}
+.tele-ctrl .ou{min-width:140px;text-align:center;font-weight:700}
+.tele-choix{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}.tele-choix button{flex:none;font-size:14px;padding:6px 10px}
+.tele.replie .tele-ctrl,.tele.replie .tele-choix{display:none}
+body.replie{padding-bottom:60px}
+/* sur l'écran projeté, seulement les textes */
+.mode-ecran .haut,.mode-ecran #onglets,.mode-ecran #mains,.mode-ecran #tele,.mode-ecran .choix-t{display:none!important}
+body.mode-ecran{padding-bottom:0}.mode-ecran .vue{max-width:none}
 #mains:empty{display:none}
 #mains{position:sticky;top:0;z-index:40;background:#E8692C;color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:18px}
 #mains .m{background:#fff;color:#1b1f2e;border-radius:999px;padding:6px 8px 6px 14px;display:flex;gap:10px;align-items:center;font-weight:700}
@@ -83,10 +98,11 @@ details summary{cursor:pointer;color:var(--plan-2);font-weight:700}
 </head>
 <body>
 <header class="haut"><div class="logo">B</div><div class="titre"><small>Vue formateur · <span id="salle"></span></small><b>L'IA dans les métiers de l'administratif</b></div>
-  <nav><a id="l-ecran" href="index.html#ecran" target="_blank" rel="noopener">Mur projeté</a></nav></header>
+  <nav><a id="l-proj" href="ecran.html" target="_blank" rel="noopener">📺 Écran projeté</a></nav></header>
 <div id="mains" aria-live="polite"></div>
 <div class="onglets" role="tablist" id="onglets"></div>
 <main class="vue" id="vue"></main>
+<div class="tele" id="tele"></div>
 
 <script type="module">
 import { app, db, SALLE, suffixe, $, esc, copier, toast } from './commun.js';
@@ -97,10 +113,14 @@ import { collection, doc, onSnapshot, setDoc, query, orderBy, serverTimestamp } 
 const IMAGES = ['soleil', 'cafe', 'sommet', 'bouchon', 'fusee', 'hamac', 'dossiers', 'foret', 'graine', 'orage', 'arcenciel', 'bateau'];
 const BASE = location.origin + location.pathname.replace(/formateur\.html$/, '');
 const DOC_SEANCE = 'https://claude.ai/artifact/4HmhfTF1uaapV4wXq9YtvC';
-$('salle').textContent = SALLE; $('l-ecran').href = 'index.html' + suffixe + '#ecran';
+$('salle').textContent = SALLE; $('l-proj').href = 'ecran.html' + suffixe;
+// ouverte par l'écran projeté (?ecran=textes) : seulement les textes envoyés, en grand
+const PARAMS = new URLSearchParams(location.search), MODE_ECRAN = PARAMS.get('ecran') === 'textes';
+if (MODE_ECRAN) document.body.classList.add('mode-ecran');
 
 let ONGLET = (() => { try { return sessionStorage.getItem('onglet') || 'seance'; } catch { return 'seance'; } })();
-let entrees = [], conf = {}, ateliers = {}, taches = {}, quiz = [], avis = [], projoTache = 2;
+let entrees = [], conf = {}, ateliers = {}, taches = {}, quiz = [], avis = [], projoTache = 2, ECRAN = {};
+if (MODE_ECRAN) { ONGLET = 'projeter'; projoTache = +PARAMS.get('t') === 2 ? 2 : 1; }
 const ecoutes = {};
 
 onSnapshot(query(collection(db, 'murs', SALLE, 'entrees'), orderBy('le')), s => { entrees = s.docs.map(d => d.data()); rendre(); });
@@ -126,7 +146,7 @@ onSnapshot(collection(db, 'murs', SALLE, 'mains'), s => {
   const l = s.docs.filter(d => d.data().active).sort((a, b) => (a.data().le?.seconds || 0) - (b.data().le?.seconds || 0));
   $('mains').innerHTML = l.length ? '<b>✋ Main levée :</b>' + l.map(d => `<span class="m">${esc(d.data().prenom)} <small>${PAGES[d.data().page] || ''}</small><button type="button" data-baisser="${esc(d.id)}">C'est fait</button></span>`).join('') : '';
   $('mains').querySelectorAll('[data-baisser]').forEach(b => b.onclick = () => { const v = s.docs.find(d => d.id === b.dataset.baisser).data(); setDoc(doc(db, 'murs', SALLE, 'mains', b.dataset.baisser), { prenom: v.prenom, page: v.page, active: false, le: serverTimestamp() }); });
-  if (l.length > nbMains) { try { const c = new AudioContext(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = 880; g.gain.value = .08; o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + .18); } catch {} }
+  if (l.length > nbMains && !MODE_ECRAN) { try { const c = new AudioContext(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = 880; g.gain.value = .08; o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + .18); } catch {} }
   nbMains = l.length; document.title = (l.length ? `(✋ ${l.length}) ` : '') + 'Vue formateur';
 });
 
@@ -160,12 +180,13 @@ const PHASES = [   // séance d'une heure (Parnel 15/11) : la présentation et u
     [['diapos.html#10', 'Diapositive du bilan'], ['!quiz.html', 'Adresse du quiz en grand'], ['@quiz', 'Résultats du quiz'], ['index.html#ecran', 'Le mur et ses mots']]],
 ];
 const cleDebut = 'debut-seance-' + SALLE;
-const debut = () => { try { return +localStorage.getItem(cleDebut) || 0; } catch { return 0; } };
+// le départ du chronomètre est partagé (config/ecran) : le téléphone et l'ordi affichent le même temps
+const debut = () => { if ('debut' in ECRAN) return ECRAN.debut || 0; try { return +localStorage.getItem(cleDebut) || 0; } catch { return 0; } };
 const minutes = () => debut() ? (Date.now() - debut()) / 60000 : -1;
 function seance() {
   const m = minutes();
   const lien = ([href, t]) => href.startsWith('@') ? `<button class="mini" type="button" data-o="${href.slice(1)}">${t}</button>`
-    : href.startsWith('!') ? `<button class="mini" type="button" data-grand="${href.slice(1)}">${t}</button>`
+    : versEcran(href) ? `<button class="mini" type="button" data-ecran="${versEcran(href)}">📺 ${t}</button>`
     : `<a class="mini" href="${esc(href.startsWith('http') ? href : href.replace(/^([^#]*)/, `$1${suffixe}`))}" target="_blank" rel="noopener">${t}</a>`;
   return `<div class="chrono"><b id="chrono">${m < 0 ? '0:00' : horloge(m)}</b><span id="chrono-txt">${m < 0 ? 'Lancez le chronomètre au début de la séance : la phase en cours s\'affiche en orange.' : phaseTexte(m)}</span>
       ${m < 0 ? '<button class="btn" type="button" id="b-debut">Démarrer la séance</button>' : '<button class="btn clair" type="button" id="b-zero">Remettre à zéro</button>'}</div>
@@ -272,7 +293,7 @@ function detailTache(id, n) {
 function projeter() {
   const ids = Object.keys(ateliers).sort().filter(id => taches[id]?.[projoTache]?.envoi);
   return `<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center"><h2>Les textes envoyés à Mme Leroy</h2>
-    <div class="choix-t">${TACHES_SEANCE.map(n => `<button class="${n === projoTache ? 'btn' : 'btn clair'}" type="button" data-projo="${n}">Tâche ${n}</button>`).join('')}<button class="btn bleu" type="button" id="b-plein">Plein écran</button></div></div>
+    <div class="choix-t">${TACHES_SEANCE.map(n => `<button class="${n === projoTache ? 'btn' : 'btn clair'}" type="button" data-projo="${n}">Tâche ${n}</button>`).join('')}<button class="btn bleu" type="button" id="b-plein">Plein écran</button><button class="btn" type="button" id="b-projo-ecran">📺 À l'écran projeté</button></div></div>
     <p class="note">${esc(TACHES[projoTache].titre)}. Pour le retour : « Montrez-moi avant que je signe. Qu'avez-vous mis dans l'IA ? Qu'avez-vous corrigé ? Comment l'avez-vous vérifié ? »</p>
     <div class="projo">${ids.map((id, i) => `<div class="carte"><h3>Texte ${String.fromCharCode(65 + i)}</h3><div class="texte">${esc(taches[id][projoTache].envoi.texte)}</div></div>`).join('') || '<p class="note">Aucun texte envoyé pour cette tâche.</p>'}</div>`;
 }
@@ -333,8 +354,10 @@ function brancher() {
   const v = $('vue');
   v.querySelectorAll('[data-projo]').forEach(b => b.onclick = () => { projoTache = +b.dataset.projo; rendre(); });
   v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { ONGLET = b.dataset.o; try { sessionStorage.setItem('onglet', ONGLET); } catch {} rendre(); scrollTo(0, 0); });
-  $('b-debut')?.addEventListener('click', () => { try { localStorage.setItem(cleDebut, Date.now()); } catch {} rendre(); });
-  $('b-zero')?.addEventListener('click', () => { if (!confirm('Remettre le chronomètre à zéro ?')) return; try { localStorage.removeItem(cleDebut); } catch {} rendre(); });
+  $('b-debut')?.addEventListener('click', () => { const t = Date.now(); try { localStorage.setItem(cleDebut, t); } catch {} ECRAN.debut = t; mettreEcran({ debut: t }); rendre(); });
+  $('b-zero')?.addEventListener('click', () => { if (!confirm('Remettre le chronomètre à zéro ?')) return; try { localStorage.removeItem(cleDebut); } catch {} ECRAN.debut = 0; mettreEcran({ debut: 0 }); rendre(); });
+  v.querySelectorAll('[data-ecran]').forEach(b => b.onclick = () => choisirEcran(b.dataset.ecran));
+  $('b-projo-ecran')?.addEventListener('click', () => mettreEcran({ page: 'textes', tache: projoTache }));
   $('b-plein')?.addEventListener('click', () => document.documentElement.requestFullscreen?.().catch(() => {}));
   v.querySelectorAll('[data-grand]').forEach(b => b.onclick = () => {
     const g = document.createElement('div'); g.className = 'grand';
@@ -357,7 +380,62 @@ function brancher() {
     rendre();
   });
 }
-rendre();
+// ——— 📺 télécommande de l'écran projeté ———
+const REF_ECRAN = doc(db, 'murs', SALLE, 'config', 'ecran'), NB_DIAPOS = 10;
+const CHOIX = [['pause', 'Titre'], ['mur', 'Mur'], ['diapos', 'Diapositives'], ['demo', 'Démo IA'], ['atelier', 'Adresse atelier'], ['textes', 'Textes envoyés'], ['quiz', 'Adresse quiz']];
+let replie = (() => { try { return localStorage.getItem('tele-replie') === '1'; } catch { return false; } })();
+function versEcran(href) {   // une page de la séance à montrer sur l'écran projeté
+  const [page, ancre] = href.replace(/^!/, '').split('#');
+  if (page === 'index.html' && ancre === 'ecran') return 'mur';
+  if (page === 'diapos.html') return 'diapos:' + (+ancre || 1);
+  if (page === 'demo.html') return 'demo';
+  if (href === '!atelier.html') return 'atelier';
+  if (href === '!quiz.html') return 'quiz';
+  return '';
+}
+function mettreEcran(patch) {
+  Object.assign(ECRAN, patch);
+  setDoc(REF_ECRAN, { ...patch, maj: serverTimestamp() }, { merge: true }).catch(e => { console.error(e); toast("L'écran projeté n'a pas reçu l'ordre."); });
+  rendreTele();
+}
+function choisirEcran(v) {
+  const [page, n] = v.split(':');
+  if (page === 'diapos') return mettreEcran({ page, diapo: +n || ECRAN.diapo || 1 });
+  if (page === 'mur') return mettreEcran({ page, fiche: -1 });
+  if (page === 'textes') return mettreEcran({ page, tache: ECRAN.tache || 1 });
+  mettreEcran({ page });
+}
+function rendreTele() {
+  if (MODE_ECRAN) return;
+  const E = ECRAN, page = E.page || 'pause', t = $('tele');
+  const nom = { pause: 'le titre', mur: 'le mur', diapos: `diapositive ${E.diapo || 1}`, demo: 'la démo IA', atelier: "l'adresse de l'atelier", quiz: "l'adresse du quiz", textes: `les textes (${(E.tache || 1) === 1 ? 'exercice' : 'bonus'})` }[page];
+  const f = Number.isInteger(E.fiche) && E.fiche >= 0 ? entrees[E.fiche] : null;
+  let ctrl = '';
+  if (page === 'diapos') ctrl = `<button class="gros" data-t="d-1">←</button><span class="ou">${E.diapo || 1} / ${NB_DIAPOS}</span><button class="gros" data-t="d+1">→</button>`;
+  if (page === 'mur') ctrl = entrees.length ? `<button class="gros" data-t="f-1">←</button><span class="ou">${f ? esc(f.prenom) + ' en grand' : 'Tout le mur'}</span><button class="gros" data-t="f+1">→</button>${f ? '<button data-t="f0">Fermer</button>' : ''}` : "<span class='ou'>Personne au mur pour l'instant</span>";
+  if (page === 'textes') ctrl = TACHES_SEANCE.map(n => `<button class="${(E.tache || 1) === n ? 'actif' : ''}" data-t="t${n}">${n === 1 ? "L'exercice" : 'Le bonus'}</button>`).join('');
+  t.className = 'tele' + (replie ? ' replie' : ''); document.body.classList.toggle('replie', replie);
+  t.innerHTML = `<div class="tele-haut"><span>📺 À l'écran : <b>${nom}</b></span><button type="button" data-t="replier" aria-label="${replie ? 'Déplier' : 'Replier'} la télécommande">${replie ? '▴' : '▾'}</button></div>
+    <div class="tele-ctrl">${ctrl}</div>
+    <div class="tele-choix">${CHOIX.map(([k, l]) => `<button type="button" class="${k === page ? 'actif' : ''}" data-c="${k}">${l}</button>`).join('')}</div>`;
+  t.querySelectorAll('[data-c]').forEach(b => b.onclick = () => choisirEcran(b.dataset.c));
+  t.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
+    const a = b.dataset.t, k = Number.isInteger(E.fiche) ? E.fiche : -1;
+    if (a === 'replier') { replie = !replie; try { localStorage.setItem('tele-replie', replie ? '1' : '0'); } catch {} return rendreTele(); }
+    if (a === 'd-1' || a === 'd+1') return mettreEcran({ diapo: Math.min(Math.max((E.diapo || 1) + (a === 'd+1' ? 1 : -1), 1), NB_DIAPOS) });
+    if (a === 'f+1') return mettreEcran({ fiche: Math.min(k + 1, entrees.length - 1) });
+    if (a === 'f-1') return mettreEcran({ fiche: Math.max(k - 1, -1) });
+    if (a === 'f0') return mettreEcran({ fiche: -1 });
+    if (a[0] === 't') return mettreEcran({ tache: +a.slice(1) });
+  });
+}
+onSnapshot(REF_ECRAN, s => {
+  const avant = ECRAN.debut;
+  ECRAN = s.data() || {};
+  rendreTele();
+  if (ECRAN.debut !== avant && ONGLET === 'seance') rendre();
+});
+rendre(); rendreTele();
 </script>
 </body>
 </html>

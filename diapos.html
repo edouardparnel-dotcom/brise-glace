@@ -202,7 +202,10 @@ function montrer(n) {
   document.getElementById('compte').textContent = `${i + 1} / ${diapos.length}`;
   document.getElementById('notes').textContent = diapos[i].dataset.notes || '';
   history.replaceState(null, '', '#' + (i + 1));
+  if (parent !== window) parent.postMessage({ diapo: i + 1 }, location.origin);   // dans l'écran projeté : la vue formateur suit
 }
+// l'écran projeté (ecran.html) change de diapositive quand le formateur le demande depuis son téléphone
+addEventListener('message', e => { if (e.origin === location.origin && Number.isInteger(e.data?.diapo)) montrer(e.data.diapo - 1); });
 const plein = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.().catch(() => {});
 const notes = () => document.getElementById('notes').classList.toggle('vue');
 addEventListener('keydown', e => {

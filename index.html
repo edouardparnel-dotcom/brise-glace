@@ -224,10 +224,12 @@ function merci(f) {
 }
 
 // Un clic sur une fiche du mur : le stagiaire en grand pendant qu'il se présente à l'oral (← → pour passer au suivant, Échap pour fermer)
-let fiches = [], enGrand = -1;
-function montrer(k) {
+let fiches = [], enGrand = -1, voulu = null;
+function montrer(k, distant) {
   document.querySelector('.grand-fiche')?.remove();
-  if (k < 0 || k >= fiches.length) { enGrand = -1; return; }
+  if (k < 0 || k >= fiches.length) k = -1;
+  if (!distant) { voulu = k; if (parent !== window) parent.postMessage({ fiche: k }, location.origin); }   // dans l'écran projeté : la vue formateur suit
+  if (k < 0) { enGrand = -1; return; }
   enGrand = k; const f = fiches[k], g = document.createElement('div'); g.className = 'grand-fiche';
   g.innerHTML = `<img src="${img(f.image)}" alt="${ALT[f.image] || ''}"><div><p class="qui">${esc(f.prenom)}</p><span class="mot">${esc(f.mot)}</span>
     ${f.parcours ? `<p class="parcours">${esc(f.parcours)}</p>` : ''}</div>
@@ -243,6 +245,8 @@ addEventListener('keydown', e => {
 });
 
 function ecran() {
+  // l'écran projeté (ecran.html) met un stagiaire en grand quand le formateur le demande depuis son téléphone
+  addEventListener('message', e => { if (e.origin === location.origin && Number.isInteger(e.data?.fiche)) { voulu = e.data.fiche; if (voulu !== enGrand && (voulu < 0 || voulu < fiches.length)) montrer(voulu, true); } });
   $('mur').addEventListener('click', e => { const c = e.target.closest('.fiche[data-k]'); if (c) montrer(+c.dataset.k); });
   $('vue-tel').classList.add('cache'); $('vue-ecran').classList.remove('cache');
   const lien = location.origin + location.pathname + (SALLE !== 'belle-alliance' ? '?salle=' + SALLE : '');
@@ -253,6 +257,7 @@ function ecran() {
     const l = s.docs.map(d => d.data());
     $('nb').textContent = l.length; $('pluriel').textContent = l.length > 1 ? 's' : '';
     fiches = l;
+    if (voulu !== null && voulu >= 0 && voulu < l.length && voulu !== enGrand) montrer(voulu, true);   // demandé avant l'arrivée des fiches
     $('mur').innerHTML = l.length ? l.map((f, k) => `<article class="fiche" data-k="${k}" title="Cliquez : en grand pour sa présentation"><img src="${img(f.image)}" alt="${ALT[f.image] || ''}"><div><b>${esc(f.prenom)}</b><i>${esc(f.mot)}</i></div></article>`).join('')
       : '<p class="vide">Scannez le QR code : votre fiche apparaîtra ici.</p>';
     // nuage de mots : plus un mot revient, plus il est grand

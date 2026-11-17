@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Écran projeté</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* Écran projeté : l'ordinateur relié au vidéoprojecteur affiche ce que le formateur choisit dans sa vue formateur (téléphone ou ordi). */
+html,body{margin:0;height:100%;overflow:hidden;background:var(--plan)}
+#cadre{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
+.plein{position:fixed;inset:0;background:var(--plan);color:#fff;display:grid;place-items:center;text-align:center;padding:4vw}
+.plein b{font-family:var(--f-titre);font-size:clamp(32px,5.5vw,88px);line-height:1.1;word-break:break-all}
+.plein p{font-size:clamp(20px,2.4vw,36px);opacity:.85;margin:3vh 0 0}
+.plein h1{font-size:clamp(36px,5vw,80px)}
+#depart{z-index:10;cursor:pointer}
+#depart .btn{font-size:24px;margin-top:4vh}
+.cache{display:none}
+</style>
+</head>
+<body>
+<iframe id="cadre" class="cache" title="Écran projeté"></iframe>
+<div class="plein cache" id="grand"></div>
+<div class="plein" id="depart"><div><h1>Écran projeté</h1><p>Cet écran suit votre vue formateur : choisissez ce qu'il affiche depuis votre téléphone.</p>
+  <button class="btn" type="button">Cliquer pour passer en plein écran</button><p style="font-size:18px">Ou appuyez sur Échap pour rester en fenêtre.</p></div></div>
+
+<script type="module">
+import { db, SALLE, suffixe, $, esc } from './commun.js';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+const BASE = location.host + location.pathname.replace(/ecran\.html$/, '');
+const REF = doc(db, 'murs', SALLE, 'config', 'ecran');
+const cadre = $('cadre');
+let E = {}, chargee = '';
+
+const depart = () => { $('depart').classList.add('cache'); document.documentElement.requestFullscreen?.().catch(() => {}); };
+$('depart').onclick = depart;
+addEventListener('keydown', e => { if (e.key === 'Escape') $('depart').classList.add('cache'); });
+
+// l'adresse de chaque page ; le mur et les diapositives changent de stagiaire ou de diapositive sans recharger
+function adresse(e) {
+  const s = suffixe;
+  if (e.page === 'mur') return 'index.html' + s + '#ecran';
+  if (e.page === 'diapos') return 'diapos.html' + s + '#' + (e.diapo || 1);
+  if (e.page === 'demo') return 'demo.html' + s;
+  if (e.page === 'textes') return 'formateur.html' + (s ? s + '&' : '?') + 'ecran=textes&t=' + (e.tache || 1);
+  return '';
+}
+function afficher() {
+  const url = adresse(E), g = $('grand');
+  if (!url) {
+    cadre.classList.add('cache'); cadre.removeAttribute('src'); chargee = '';
+    g.classList.remove('cache');
+    g.innerHTML = E.page === 'atelier' || E.page === 'quiz'
+      ? `<div><p style="margin:0 0 3vh">${E.page === 'atelier' ? "Sur votre poste, ouvrez l'atelier :" : 'Sur votre poste ou votre téléphone, le quiz :'}</p><b>${esc(BASE + E.page + '.html' + suffixe)}</b></div>`
+      : `<div><h1>L'IA dans les métiers de l'administratif</h1><p>Belle Alliance</p></div>`;
+    return;
+  }
+  g.classList.add('cache'); cadre.classList.remove('cache');
+  const page = url.split('#')[0].split('?')[0] + (E.page === 'textes' ? E.tache : '');
+  if (page !== chargee) { chargee = page; cadre.src = url; cadre.onload = envoyer; }
+  else envoyer();
+}
+function envoyer() {   // la diapositive ou le stagiaire en grand, à la page déjà ouverte
+  const w = cadre.contentWindow; if (!w) return;
+  if (E.page === 'diapos') w.postMessage({ diapo: E.diapo || 1 }, location.origin);
+  if (E.page === 'mur') w.postMessage({ fiche: Number.isInteger(E.fiche) ? E.fiche : -1 }, location.origin);
+}
+onSnapshot(REF, s => { E = s.data() || { page: 'pause' }; afficher(); });
+
+// au clavier sur cet ordi (flèches des diapositives, clic sur une fiche du mur) : le téléphone suit aussi
+addEventListener('message', e => {
+  if (e.origin !== location.origin || e.source !== cadre.contentWindow) return;
+  const d = e.data || {};
+  if (E.page === 'diapos' && Number.isInteger(d.diapo) && d.diapo !== E.diapo) setDoc(REF, { diapo: d.diapo, maj: serverTimestamp() }, { merge: true });
+  if (E.page === 'mur' && Number.isInteger(d.fiche) && d.fiche !== (E.fiche ?? -1)) setDoc(REF, { fiche: d.fiche, maj: serverTimestamp() }, { merge: true });
+});
+</script>
+</body>
+</html>
