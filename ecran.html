@@ -27,6 +27,21 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--plan)}
 <div class="plein" id="depart"><div><h1>Écran projeté</h1><p>Cet écran suit votre vue formateur : choisissez ce qu'il affiche depuis votre téléphone.</p>
   <button class="btn" type="button">Cliquer pour passer en plein écran</button><p style="font-size:18px">Ou appuyez sur Échap pour rester en fenêtre.</p></div></div>
 
+<script>
+// Script classique : le clic marche même si le navigateur est trop ancien pour la suite ; sinon, on le dit à l'écran.
+document.getElementById("depart").onclick = function () {
+  this.classList.add("cache");
+  try { var p = document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+};
+setTimeout(function () {
+  if (window.ECRAN_OK) return;
+  var g = document.getElementById("depart");
+  g.classList.remove("cache"); g.onclick = null;
+  g.innerHTML = "<div><h1>Ce navigateur ne peut pas afficher l'écran projeté</h1><p>Ouvrez cette adresse dans Chrome ou Edge (sur l'ordinateur), ou utilisez directement la vue formateur.</p><p id='ua' style='font-size:14px'></p></div>";
+  document.getElementById("ua").textContent = navigator.userAgent;
+}, 8000);
+</script>
+
 <script type="module">
 import { db, SALLE, suffixe, $, esc } from './commun.js';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
@@ -71,6 +86,7 @@ function envoyer() {   // la diapositive ou le stagiaire en grand, à la page d�
   if (E.page === 'corrquiz') w.postMessage({ question: E.question || 1 }, location.origin);
   if (E.page === 'mur') w.postMessage({ fiche: Number.isInteger(E.fiche) ? E.fiche : -1 }, location.origin);
 }
+window.ECRAN_OK = true;
 onSnapshot(REF, s => { E = s.data() || { page: 'pause' }; afficher(); });
 
 // au clavier sur cet ordi (flèches des diapositives, clic sur une fiche du mur) : le téléphone suit aussi
