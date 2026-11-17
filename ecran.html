@@ -19,6 +19,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--plan)}
 #depart{z-index:10;cursor:pointer}
 #depart .btn{font-size:24px;margin-top:4vh}
 .cache{display:none}
+.plein img.qr{display:block;margin:0 auto 3vh;width:min(38vh,38vw);height:auto;background:#fff;border-radius:16px;padding:12px;image-rendering:pixelated}
+.plein img.qr+b{font-size:clamp(24px,3.4vw,56px)}
 </style>
 </head>
 <body>
@@ -42,6 +44,7 @@ setTimeout(function () {
 }, 8000);
 </script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script type="module">
 import { db, SALLE, suffixe, $, esc } from './commun.js';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
@@ -70,9 +73,11 @@ function afficher() {
   if (!url) {
     cadre.classList.add('cache'); cadre.removeAttribute('src'); chargee = '';
     g.classList.remove('cache');
+    const lien = BASE + E.page + '.html' + suffixe;
     g.innerHTML = E.page === 'atelier' || E.page === 'quiz'
-      ? `<div><p style="margin:0 0 3vh">${E.page === 'atelier' ? "Sur votre poste, ouvrez l'atelier :" : 'Sur votre poste ou votre téléphone, le quiz :'}</p><b>${esc(BASE + E.page + '.html' + suffixe)}</b></div>`
+      ? `<div><p style="margin:0 0 3vh">${E.page === 'atelier' ? "Sur votre poste, ouvrez l'atelier, ou scannez le QR code :" : "Sur votre poste ou votre téléphone, le quiz :"}</p><img id="qr" class="qr" alt="QR code"><b>${esc(lien)}</b></div>`
       : `<div><h1>L'IA dans les métiers de l'administratif</h1><p>Belle Alliance</p></div>`;
+    if (window.qrcode && $('qr')) { const q = qrcode(0, 'M'); q.addData('https://' + lien); q.make(); $('qr').src = q.createDataURL(10, 2); }
     return;
   }
   g.classList.add('cache'); cadre.classList.remove('cache');
