@@ -25,6 +25,11 @@
 .doc span{color:var(--doux);font-size:14px}
 .rappel{background:var(--plan);color:#fff;border-radius:16px;padding:18px 20px;display:grid;gap:6px}
 .rappel b{font-family:var(--f-titre);font-size:24px}
+.fiche-ent{background:var(--carte);border:1px solid var(--trait);border-left:6px solid var(--chantier);border-radius:14px;padding:16px 18px;display:grid;gap:10px}
+.fiche-ent h3{font-size:20px}
+.fiche-ent dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:0}
+.fiche-ent dt{font-weight:700;color:var(--plan)}.fiche-ent dd{margin:0}
+@media (max-width:560px){.fiche-ent dl{grid-template-columns:1fr}.fiche-ent dd{margin-bottom:6px}}
 </style>
 </head>
 <body>
@@ -40,7 +45,16 @@
     <a class="doc" href="docs/diapositives.pdf" download><span class="ico">PDF</span><b>Les diapositives</b><span>Ce qu'est l'IA, ce qu'elle fait bien et mal, les règles d'or. 10 pages.</span></a>
   </div></section>
 
-  <section><h2>Les documents de l'entreprise Batifer</h2><div class="docs">
+  <section><h2>Les documents de l'entreprise Batifer</h2>
+    <div class="fiche-ent"><h3>Batifer en bref</h3><dl>
+      <dt>Activité</dt><dd>Entreprise du bâtiment : rénovation et réparations (salles de bains, toitures…)</dd>
+      <dt>Taille</dt><dd>SARL de 20 salariés, 22 avenue de la Gare, 95410 Groslay</dd>
+      <dt>Clients</dt><dd>Des particuliers (M. Durand) et des syndics de copropriété (Imméka, résidence Les Acacias)</dd>
+      <dt>L'équipe</dt><dd>Sandrine Leroy, votre responsable, qui signe les courriers ; Karim Benali, chef de chantier ; Aurélie Petit, comptabilité</dd>
+      <dt>Votre poste</dt><dd>Assistant(e) administratif(ve), à l'accueil : courriels des clients, factures, relances</dd>
+      <dt>Le moment</dt><dd>Mardi 17 novembre 2026, 9 h. Mme Leroy signe à 11 h.</dd>
+    </dl><p class="intro" style="margin:0">Entreprise inventée : noms, adresses et numéros sont faux.</p></div>
+    <div class="docs">
     <a class="doc" href="docs/dossier-batifer.pdf" download><span class="ico o">PDF</span><b>Le dossier complet</b><span>Le mot de Mme Leroy, le courriel de M. Durand, la facture, la relance. 4 pages.</span></a>
     <a class="doc" id="l-atelier2" href="atelier.html"><span class="ico o">EN<br>LIGNE</span><b>La boîte mail de Batifer</b><span>Les mêmes documents dans l'atelier, avec l'assistant IA : rien à recopier.</span></a>
   </div></section>
